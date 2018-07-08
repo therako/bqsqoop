@@ -66,7 +66,7 @@ setup(
     tests_require=TEST_REQUIREMENTS,
     classifiers=[
         'License :: OSI Approved :: MIT License',
-        'DEVELOPMENT STATUS :: 2 - PRE-ALPHA',
+        'Development Status :: 2 - Pre-Alpha',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',

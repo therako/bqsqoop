@@ -22,7 +22,7 @@ class Extractor(ABC):
         Returns: (bool)
             True if valid, else False
         """
-        return False
+        return False    # pragma: no cover
 
     @abstractmethod
     def extract_to_parquet(self):
@@ -31,4 +31,4 @@ class Extractor(ABC):
         Returns:
             List of all extracted full file path.
         """
-        return []
+        return []   # pragma: no cover

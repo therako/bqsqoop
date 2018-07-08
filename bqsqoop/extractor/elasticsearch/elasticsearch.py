@@ -1,4 +1,6 @@
 import logging
+import uuid
+
 from .helper import ESHelper
 from bqsqoop.utils import async_worker
 from bqsqoop.extractor import Extractor
@@ -8,21 +10,24 @@ from bqsqoop.utils.errors import MissingConfigError
 class ElasticSearchExtractor(Extractor):
     """Extractor data from Elasticsearch index
     """
-    def __init__(self):
+
+    def __init__(self, _config):
+        super().__init__(_config)
         self._no_of_workers = self._config.get('no_of_workers', 1)
         self._timeout = self._config.get('timeout', '60s')
         self._scroll_size = self._config.get('scroll_size', 1000)
         self._fields = self._config.get('fields', ['_all'])
-        self._output_folder = self._config.get('output_folder', '.')
-        super().__init__()
+        self._output_folder = self._config.get(
+            'output_folder', "./" + str(uuid.uuid4())[:8])
 
     def validate_config(self):
         """Validates required configs for Elasticsearch extraction
         """
+        _es_root_name = 'Elasticsearch'
         if 'url' not in self._config:
-            raise MissingConfigError('url', 'Elasticsearch')
+            raise MissingConfigError('url', _es_root_name)
         if 'index' not in self._config:
-            raise MissingConfigError('index', 'Elasticsearch')
+            raise MissingConfigError('index', _es_root_name)
         return None
 
     def extract_to_parquet(self):

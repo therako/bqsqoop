@@ -1,0 +1,21 @@
+# Config
+toml
+
+# Process libs
+tqdm==4.19.8
+numpy==1.14.5
+pandas==0.23.1
+pytz==2018.4
+
+# Google BigQuery libs
+gcloud==0.18.3
+google-cloud-storage==1.10.0
+google-cloud-bigquery==1.3.0
+
+# Apache Arrow
+pyarrow
+
+
+# Elaticsearch
+elasticsearch>=6.0.0,<7.0.0
+elasticsearch-dsl>=6.0.0,<7.0.0

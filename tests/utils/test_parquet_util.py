@@ -24,8 +24,8 @@ class TestParquetUtil(unittest.TestCase):
 
         _ptable = pq.read_table(_filename)
         os.remove(_filename)
-        self.assertEqual(_ptable.schema.field_by_name(
-            "colA").type, pa.string())
+        self.assertIn(_ptable.schema.field_by_name(
+            "colA").type, [pa.string(), pa.binary()])
         self.assertEqual(_ptable.schema.field_by_name("colB").type, pa.int64())
         _table_dict = _ptable.to_pydict()
         self.assertEqual(_table_dict['colA'], ['val1', 'val2'])
@@ -40,8 +40,8 @@ class TestParquetUtil(unittest.TestCase):
 
         _ptable = pq.read_table(_filename)
         os.remove(_filename)
-        self.assertEqual(_ptable.schema.field_by_name(
-            "colA").type, pa.string())
+        self.assertIn(_ptable.schema.field_by_name(
+            "colA").type, [pa.string(), pa.binary()])
         self.assertEqual(_ptable.schema.field_by_name("colB").type, pa.int64())
         _table_dict = _ptable.to_pydict()
         self.assertEqual(_table_dict['colA'], ['val1', 'val2', 'val1', 'val2'])

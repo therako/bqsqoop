@@ -14,8 +14,7 @@ develop:
 	@echo "Added pre-push hook! To run manually: make pre-commit"
 
 test-setup:
-	pip install -r test-requirements.txt
-	pip install -e .
+	python setup.py develop
 
 test:
 	tox

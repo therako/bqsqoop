@@ -4,3 +4,5 @@ pytest
 pytest-cov
 restructuredtext_lint
 flake8
+testfixtures
+pygments

@@ -52,8 +52,8 @@ TEST_REQUIREMENTS = [req for req in test_requirements if (
 
 setup(
     name='bq-sqoop',
-    author='Arunkumar Ramanathan',
-    author_email='rako.aka.arun@gmail.com',
+    author='Arun Kumar Ramanathan',
+    author_email='therealrako@gmail.com',
     license='MIT License',
     url='https://github.com/therako/bqsqoop',
     description='A CLI client for exporting elasticsearch data to csv',
@@ -66,10 +66,10 @@ setup(
     tests_require=TEST_REQUIREMENTS,
     classifiers=[
         'License :: OSI Approved :: MIT License',
-        'Development Status :: 3 - Alpha',
+        'DEVELOPMENT STATUS :: 2 - PRE-ALPHA',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
     ],
 )

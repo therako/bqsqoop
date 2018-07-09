@@ -1,14 +1,16 @@
 import pytest
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from bqsqoop.utils.errors import MissingConfigError
 from bqsqoop.extractor.elasticsearch import ElasticSearchExtractor
 
 
+_valid_config = {'url': 'es_endpoint', 'index': 'some_es_index'}
+
+
 class TestConfig(unittest.TestCase):
     def test_with_minimum_required_configs(self):
-        _config = {'url': 'es_endpoint', 'index': 'some_es_index'}
-        _e = ElasticSearchExtractor(_config)
+        _e = ElasticSearchExtractor(_valid_config)
         # No error raised
         _e.validate_config()
 
@@ -34,3 +36,15 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(_e._scroll_size, 1000)
         self.assertEqual(_e._fields, ['_all'])
         self.assertEqual(_e._output_folder, './F43C2651')
+
+
+class TestExtractToParquet(unittest.TestCase):
+    @patch('bqsqoop.extractor.elasticsearch.helper.ESHelper')
+    @patch('bqsqoop.utils.async_worker.AsyncWorker')
+    def test_async_extract_call(self, async_worker, es_helper):
+        _e = ElasticSearchExtractor(_valid_config)
+        _mock_worker = MagicMock()
+        async_worker.return_value = _mock_worker
+        _mock_worker.get_job_results = MagicMock(return_value=["file1.parq"])
+
+        self.assertEqual(_e.extract_to_parquet(), ["file1.parq"])

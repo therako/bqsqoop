@@ -1,10 +1,10 @@
 import logging
 import uuid
 
-from .helper import ESHelper
 from bqsqoop.utils import async_worker
 from bqsqoop.extractor import Extractor
 from bqsqoop.utils.errors import MissingConfigError
+from bqsqoop.extractor.elasticsearch import helper
 
 
 class ElasticSearchExtractor(Extractor):
@@ -55,9 +55,9 @@ class ElasticSearchExtractor(Extractor):
         if '_all' not in self._fields:
             search_args['_source_include'] = ','.join(
                 self._fields)
-        _fields = ESHelper.get_fields(
+        _fields = helper.ESHelper.get_fields(
             self._config['url'], self._config['index'])
-        return dict(worker_callback=ESHelper.scroll_and_extract_data,
+        return dict(worker_callback=helper.ESHelper.scroll_and_extract_data,
                     total_worker_count=self._no_of_workers,
                     es_hosts=self._config['url'],
                     es_timeout=self._timeout,

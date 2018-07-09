@@ -3,7 +3,7 @@ import uuid
 import elasticsearch
 import pandas as pd
 
-from bqsqoop.utils.parquet_util import ParquetUtil
+from bqsqoop.utils import parquet_util
 from bqsqoop.utils.progressbar_util import ProgressBar
 
 
@@ -38,7 +38,7 @@ class ESHelper():
         _data, _sid = self._get_data_from_es_page(_page)
         _total_hits = _page['hits']['total']
         df = None
-        _parquetUtil = ParquetUtil(_output_file)
+        _parquetUtil = parquet_util.ParquetUtil(_output_file)
         _pbar = ProgressBar(
             total_length=_total_hits, position=worker_id, enabled=progress_bar)
         if _data:
@@ -87,9 +87,10 @@ class ESHelper():
 
     @classmethod
     def _get_data_from_es_page(self, _page):
-        _data = _page['hits']['hits']
-        if _data:
-            _rows = [_datumn['_source'] for _datumn in _data]
-            _sid = _page['_scroll_id']
-            return _rows, _sid
+        if 'hits' in _page and 'hits' in _page['hits']:
+            _data = _page['hits']['hits']
+            if _data:
+                _rows = [_datumn['_source'] for _datumn in _data]
+                _sid = _page['_scroll_id']
+                return _rows, _sid
         return None, None

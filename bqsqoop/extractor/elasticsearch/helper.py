@@ -11,13 +11,13 @@ class ESHelper():
     @classmethod
     def get_fields(self, es_hosts, index):
         _es = self._get_es_client(es_hosts)
-        mappings = _es.indices.get_mapping(
+        _mappings = _es.indices.get_mapping(
             index=index
         )
         _fields = {}
-        for index, value in mappings.items():
+        for index, value in _mappings.items():
             index_mappings = value['mappings']
-            for index_type, index_type_value in index_mappings.items():
+            for _, index_type_value in index_mappings.items():
                 _properties = index_type_value['properties']
                 _keys = list(_properties.keys())
                 for _key in _keys:

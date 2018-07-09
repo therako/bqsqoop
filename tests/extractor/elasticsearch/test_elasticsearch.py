@@ -1,5 +1,6 @@
 import pytest
 import unittest
+
 from unittest.mock import patch, MagicMock
 from bqsqoop.utils.errors import MissingConfigError
 from bqsqoop.extractor.elasticsearch import ElasticSearchExtractor

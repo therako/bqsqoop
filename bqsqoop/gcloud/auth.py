@@ -5,7 +5,7 @@ def setup_credentials(config):
     """Setups up GCP credentials using key from vm or from config
 
     Args:
-        config: Config dict of the Sqoop Job
+        config (dict): Config dict of the Sqoop Job
 
     Returns:
         None

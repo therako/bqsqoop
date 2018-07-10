@@ -18,7 +18,12 @@ def get_extractor_for(config):
     if(len(_extractor_config) != 1):
         raise Exception(
             "Job takes only one extractor, given {}".format(
-                len(_extractor_config)))
+                _extractor_config))
     _extractor_src, _extractor_config = next(iter(_extractor_config.items()))
     _extractor = _extractors.get(_extractor_src)
-    return _extractor(_extractor_config)
+    if(_extractor):
+        return _extractor(_extractor_config)
+    else:
+        raise Exception(
+            "Unknown extractor given {}".format(
+                _extractor_config))

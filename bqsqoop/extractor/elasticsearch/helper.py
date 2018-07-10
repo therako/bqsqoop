@@ -36,7 +36,7 @@ class ESHelper():
             output_folder, search_args['index'])
         _page = _es.search(**search_args)
         _data, _sid = self._get_data_from_es_page(_page)
-        _total_hits = _page['hits']['total']
+        _total_hits = self._get_total_hits(_page)
         df = None
         _parquetUtil = parquet_util.ParquetUtil(_output_file)
         _pbar = ProgressBar(
@@ -46,16 +46,16 @@ class ESHelper():
             self._fix_types_from_es(df, fields)
             _parquetUtil.append_df_to_parquet(df)
             _pbar.move_progress(len(_data))
-        while True:
-            _page = _es.scroll(scroll_id=_sid, scroll=es_timeout)
-            _data, _sid = self._get_data_from_es_page(_page)
-            if _data:
-                df = pd.DataFrame.from_dict(_data)
-                self._fix_types_from_es(df, fields)
-                _parquetUtil.append_df_to_parquet(df)
-                _pbar.move_progress(len(_data))
-            else:
-                break
+            while True:
+                _page = _es.scroll(scroll_id=_sid, scroll=es_timeout)
+                _data, _sid = self._get_data_from_es_page(_page)
+                if _data:
+                    df = pd.DataFrame.from_dict(_data)
+                    self._fix_types_from_es(df, fields)
+                    _parquetUtil.append_df_to_parquet(df)
+                    _pbar.move_progress(len(_data))
+                else:
+                    break
         _parquetUtil.close()
         return _output_file
 
@@ -94,3 +94,9 @@ class ESHelper():
                 _sid = _page['_scroll_id']
                 return _rows, _sid
         return None, None
+
+    @classmethod
+    def _get_total_hits(self, _page):
+        if 'hits' in _page and 'total' in _page['hits']:
+            return _page['hits']['total']
+        return 0

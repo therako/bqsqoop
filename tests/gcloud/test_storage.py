@@ -3,22 +3,28 @@ import unittest
 
 from unittest.mock import patch, MagicMock, call
 from bqsqoop.gcloud.storage import (
-    copy_files_to_gcs, _validate_gcs_path, _get_details_from_gcs_path
+    copy_files_to_gcs, _get_details_from_gcs_path
 )
 
 
 class TestCopyFiles(unittest.TestCase):
-    def test__validate_gcs_path(self):
+    @patch('google.cloud.storage.Client')
+    def test_valid_gcs_path(self, storage_client):
+        _files = ["file1", "file2"]
         _valid_path = "gs://gcs_bucket"
-        _validate_gcs_path(_valid_path)
+        copy_files_to_gcs(_files, _valid_path)
+
+    @patch('google.cloud.storage.Client')
+    def test_invalid_gcs_path(self, storage_client):
+        _files = ["file1", "file2"]
         _invalid_path = "gcs_bucket"
         with pytest.raises(
                 Exception, match=r'Not a valid GCS tmp path.'):
-            _validate_gcs_path(_invalid_path)
+            copy_files_to_gcs(_files, _invalid_path)
         _invalid_path = "gs://"
         with pytest.raises(
                 Exception, match=r'Not a valid GCS tmp path.'):
-            _validate_gcs_path(_invalid_path)
+            copy_files_to_gcs(_files, _invalid_path)
 
     def test__get_details_from_gcs_path(self):
         # Tmp GCS bucket path

@@ -2,7 +2,7 @@ import pytest
 import unittest
 
 from unittest.mock import patch, MagicMock
-from bqsqoop.gcloud.bigquery import load_parquet_files
+from bqsqoop.utils.gcloud.bigquery import load_parquet_files
 
 
 class TestloadParquetFilesFromGCS(unittest.TestCase):

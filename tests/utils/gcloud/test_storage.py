@@ -2,7 +2,7 @@ import pytest
 import unittest
 
 from unittest.mock import patch, MagicMock, call
-from bqsqoop.gcloud.storage import (
+from bqsqoop.utils.gcloud.storage import (
     copy_files_to_gcs, _get_details_from_gcs_path
 )
 

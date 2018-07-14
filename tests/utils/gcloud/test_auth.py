@@ -1,7 +1,7 @@
 import os
 import pytest
 import unittest
-from bqsqoop.gcloud.auth import setup_credentials
+from bqsqoop.utils.gcloud.auth import setup_credentials
 
 
 class TestSetupCredentials(unittest.TestCase):

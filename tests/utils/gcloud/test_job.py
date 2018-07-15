@@ -9,8 +9,8 @@ class TestBigqueryParquetLoadJob(unittest.TestCase):
         _job = BigqueryParquetLoadJob(_configs)
         self.assertFalse(_job.is_config_valid)
         self.assertEqual(list(_job.errors.keys()), [
-                         "project_id", "dataset_name",
-                         "table_name", "gcs_tmp_path"])
+                         "_project_id", "_dataset_name",
+                         "_table_name", "_gcs_tmp_path"])
 
     def test_valid_configs(self):
         _configs = dict(
@@ -33,7 +33,8 @@ class TestBigqueryParquetLoadJob(unittest.TestCase):
             dataset_name="dataset_1",
             table_name="table_1",
             gcs_tmp_path="gcs_tmp_path",
-            service_account_key="{'a': 'b@c.com'}"
+            service_account_key="{'a': 'b@c.com'}",
+            write_truncate=False
         )
         _files = ["file1", "file2"]
         copy_files_to_gcs.return_value = "gs://gcs_tmp_path/sacdf/"
@@ -47,6 +48,6 @@ class TestBigqueryParquetLoadJob(unittest.TestCase):
             copy_files_to_gcs.return_value + "*.parq",
             _configs["project_id"],
             _configs["dataset_name"],
-            _configs["table_name"]
+            _configs["table_name"],
+            write_truncate=False
         )
-

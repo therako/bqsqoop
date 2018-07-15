@@ -19,23 +19,18 @@ class BigqueryParquetLoadJob():
         self._table_name = configs.get("table_name")
         self._gcs_tmp_path = configs.get("gcs_tmp_path")
         self._service_account_key = configs.get('service_account_key')
+        self._write_truncate = configs.get('write_truncate', True)
         self._validate_configs()
 
     def _validate_configs(self):
         self.errors = {}
         self.is_config_valid = True
-        _res = typed.non_empty_string(self._project_id)
-        if _res:
-            self.errors["project_id"] = _res
-        _res = typed.non_empty_string(self._dataset_name)
-        if _res:
-            self.errors["dataset_name"] = _res
-        _res = typed.non_empty_string(self._table_name)
-        if _res:
-            self.errors["table_name"] = _res
-        _res = typed.non_empty_string(self._gcs_tmp_path)
-        if _res:
-            self.errors["gcs_tmp_path"] = _res
+        _strings = ["_project_id", "_dataset_name",
+                    "_table_name", "_gcs_tmp_path"]
+        for _str_vars in _strings:
+            _res = typed.non_empty_string(getattr(self, _str_vars))
+            if _res:
+                self.errors[_str_vars] = _res
         if self.errors:
             self.is_config_valid = False
 
@@ -56,5 +51,6 @@ class BigqueryParquetLoadJob():
             _gcs_dest_path + "*.parq",
             self._project_id,
             self._dataset_name,
-            self._table_name
+            self._table_name,
+            write_truncate=self._write_truncate
         )

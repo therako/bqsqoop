@@ -54,3 +54,4 @@ class BigqueryParquetLoadJob():
             self._table_name,
             write_truncate=self._write_truncate
         )
+        storage.delete_files_in(_gcs_dest_path)

@@ -26,8 +26,9 @@ class TestBigqueryParquetLoadJob(unittest.TestCase):
     @patch('bqsqoop.utils.gcloud.auth.setup_credentials')
     @patch('bqsqoop.utils.gcloud.storage.copy_files_to_gcs')
     @patch('bqsqoop.utils.gcloud.bigquery.load_parquet_files')
-    def test_execute(self, load_parquet_files, copy_files_to_gcs,
-                     setup_credentials):
+    @patch('bqsqoop.utils.gcloud.storage.delete_files_in')
+    def test_execute(self, delete_files_in, load_parquet_files,
+                     copy_files_to_gcs, setup_credentials):
         _configs = dict(
             project_id="gcp_project_1",
             dataset_name="dataset_1",
@@ -51,3 +52,4 @@ class TestBigqueryParquetLoadJob(unittest.TestCase):
             _configs["table_name"],
             write_truncate=False
         )
+        delete_files_in.assert_called_with(copy_files_to_gcs.return_value)

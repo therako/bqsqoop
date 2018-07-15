@@ -38,14 +38,9 @@ def _validate_gcs_path(gcs_path):
 
 
 def _get_details_from_gcs_path(gcs_bucket_path, use_new_tmp_folder):
-    gcs_sub_folder_re_pattern = r'gs:\/\/(\w*)\/?(.*)'
-    _match_obj = re.match(
-        gcs_sub_folder_re_pattern, gcs_bucket_path)
-    _bucket_name = ""
-    _sub_folder = ""
-    if _match_obj:
-        _bucket_name = _match_obj.group(1)
-        _sub_folder = _match_obj.group(2)
+    _gcs_bucket_path = gcs_bucket_path.replace("gs://", "")
+    _bucket_name = _gcs_bucket_path.split("/")[0]
+    _sub_folder = "/".join(_gcs_bucket_path.split("/")[1:])
     if _sub_folder != "" and not re.match(r'(.*)\/$', _sub_folder):
         _sub_folder = _sub_folder + '/'
     if use_new_tmp_folder:

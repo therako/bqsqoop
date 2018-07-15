@@ -3,8 +3,10 @@
 import sys
 import argparse
 import logging
+import toml
+
 from bqsqoop import __version__
-from bqsqoop.job import SqoopJob
+from bqsqoop.job import Job
 
 
 p = argparse.ArgumentParser(
@@ -24,5 +26,6 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         p.print_help()
         exit()
-    opts = p.parse_args()
-    _ = SqoopJob(opts.config_file, opts.debug_mode).execute()
+    _opts = p.parse_args()
+    _configs = toml.load(_opts.config_file)
+    _ = Job(_configs, debug_mode=_opts.debug_mode).execute()

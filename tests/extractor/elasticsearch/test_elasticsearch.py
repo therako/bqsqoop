@@ -111,5 +111,4 @@ class TestExtractToParquet(unittest.TestCase):
             'index': 'some_es_index', 'scroll': '60s', 'size': 1000,
             'body': {'query': {'match_all': {}}},
             '_source_include': 'field1,field2'}
-        print(_kwargs1['search_args'])
         self.assertEqual(_kwargs1['search_args'], _search_args)

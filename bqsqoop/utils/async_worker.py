@@ -1,3 +1,5 @@
+import logging
+
 from concurrent.futures import ProcessPoolExecutor, wait
 
 
@@ -43,7 +45,7 @@ class AsyncWorker(object):
             try:
                 _job_results.append((x.result()))
             except Exception as exc:
-                print('A slice ended with Exception: %s' % exc)
+                logging.error('A slice ended with Exception: %s' % exc)
                 raise_error = True
         if raise_error:
             raise RuntimeError("One or more worker ended in Exception.")

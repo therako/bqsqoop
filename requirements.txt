@@ -13,6 +13,7 @@ google-cloud-storage==1.10.0
 google-cloud-bigquery==1.3.0
 
 # Apache Arrow
+Cython==0.28.4
 pyarrow
 
 

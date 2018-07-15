@@ -25,10 +25,10 @@ class BigqueryParquetLoadJob():
     def _validate_configs(self):
         self.errors = {}
         self.is_config_valid = True
-        _strings = ["_project_id", "_dataset_name",
-                    "_table_name", "_gcs_tmp_path"]
+        _strings = ["project_id", "dataset_name",
+                    "table_name", "gcs_tmp_path"]
         for _str_vars in _strings:
-            _res = typed.non_empty_string(getattr(self, _str_vars))
+            _res = typed.non_empty_string(getattr(self, "_" + _str_vars))
             if _res:
                 self.errors[_str_vars] = _res
         if self.errors:

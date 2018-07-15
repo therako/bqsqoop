@@ -57,3 +57,7 @@ upload-package: test lint clean
 	pip install twine wheel
 	python setup.py sdist bdist_wheel
 	twine upload dist/*
+
+upload-dockerimage: test lint clean
+	@bash ./docker/build_and_upload_image.sh
+	

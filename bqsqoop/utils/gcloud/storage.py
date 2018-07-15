@@ -25,8 +25,8 @@ def copy_files_to_gcs(files, gcs_bucket_path, use_new_tmp_folder=False):
         gcs_bucket_path, use_new_tmp_folder)
     _bucket = _client.get_bucket(_bucket_name)
     for _file in files:
-        # _filename = _file.split('/')[-1]
-        _blob = _bucket.blob(_sub_folder + _file)
+        _filename = _file.split('/')[-1]
+        _blob = _bucket.blob(_sub_folder + _filename)
         _blob.upload_from_filename(filename=_file)
     return "gs://" + _bucket_name + "/" + _sub_folder
 
@@ -47,7 +47,6 @@ def delete_files_in(gcs_bucket_path, delimiter=None):
     _client = storage.Client()
     _bucket_name, _sub_folder = _get_details_from_gcs_path(
         gcs_bucket_path, False)
-    print(_bucket_name, _sub_folder)
     _bucket = _client.get_bucket(_bucket_name)
     blobs = _bucket.list_blobs(prefix=_sub_folder, delimiter=delimiter)
     for blob in blobs:

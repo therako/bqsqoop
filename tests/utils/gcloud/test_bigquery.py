@@ -16,17 +16,7 @@ class TestloadParquetFilesFromGCS(unittest.TestCase):
         _invalid_path = "gcs_bucket"
         with pytest.raises(
                 Exception,
-                match=r'Not a valid GCS files path for .parq files'):
-            load_parquet_files(_invalid_path, "", "", "")
-        _invalid_path = "gs://"
-        with pytest.raises(
-                Exception,
-                match=r'Not a valid GCS files path for .parq files'):
-            load_parquet_files(_invalid_path, "", "", "")
-        _invalid_path = "gs://gcs_bucket/tmp_folder/*.csv"
-        with pytest.raises(
-                Exception,
-                match=r'Not a valid GCS files path for .parq files'):
+                match=r'Invalid GCS path'):
             load_parquet_files(_invalid_path, "", "", "")
 
     @patch('google.cloud.bigquery.LoadJobConfig')

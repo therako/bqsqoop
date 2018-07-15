@@ -28,5 +28,4 @@ if __name__ == '__main__':
         exit()
     _opts = p.parse_args()
     _configs = toml.load(_opts.config_file)
-    print(_configs)
     _ = Job(_configs, debug_mode=_opts.debug_mode).execute()

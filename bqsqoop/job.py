@@ -24,6 +24,7 @@ class Job():
         log.setup(debug_mode)
         self._configs = configs
         self._validate_configs()
+        logging.debug("Loading the job with configs: {}".format(self._configs))
 
     def _validate_configs(self):
         self._extractor = extractor.get_extractor_for(self._configs)

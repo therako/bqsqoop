@@ -19,7 +19,7 @@ def load_parquet_files(gcs_path, gcs_project, dataset_name, table_name,
     Returns:
         None
     """
-    _validate_gcs_path(gcs_path, ".parq")
+    _validate_gcs_path(gcs_path)
     _load_files_from_gcs(gcs_path, gcs_project, dataset_name,
                          table_name, "PARQUET", write_truncate)
 
@@ -41,9 +41,8 @@ def _load_files_from_gcs(gcs_path, gcs_project, dataset_name,
     logging.info("Table {} created".format(table_name))
 
 
-def _validate_gcs_path(gcs_path, file_extension):
-    gcs_bucket_path_re_pattern = r'gs://.+{0}$'.format(file_extension)
+def _validate_gcs_path(gcs_path):
+    gcs_bucket_path_re_pattern = r'gs://.+'
     _match_obj = re.match(gcs_bucket_path_re_pattern, gcs_path)
     if not _match_obj:
-        raise Exception("Not a valid GCS files path for {} files".format(
-            file_extension))
+        raise Exception("Invalid GCS path")

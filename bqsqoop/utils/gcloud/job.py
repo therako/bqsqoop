@@ -31,6 +31,9 @@ class BigqueryParquetLoadJob():
             _res = typed.non_empty_string(getattr(self, "_" + _str_vars))
             if _res:
                 self.errors[_str_vars] = _res
+        _res = auth.setup_credentials(self._service_account_key)
+        if _res:
+            self.errors["google_auth"] = _res
         if self.errors:
             self.is_config_valid = False
 
@@ -44,7 +47,6 @@ class BigqueryParquetLoadJob():
         Returns:
             None if the job is successful, errors if failed
         """
-        auth.setup_credentials(self._service_account_key)
         _gcs_dest_path = storage.copy_files_to_gcs(files, self._gcs_tmp_path,
                                                    use_new_tmp_folder=True)
         bigquery.load_parquet_files(

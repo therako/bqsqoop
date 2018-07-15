@@ -11,18 +11,19 @@ def setup_credentials(key=None):
         key (str): Google service account key json string
 
     Returns:
-        None
+        error if any, else None
     """
     if key:
-        _setup_credentials_from_config(key)
-    else:
-        _check_for_default_credential()
+        return _setup_credentials_from_config(key)
+    # TODO: Properly Validate the deafault serivce account here
+    # else:
+    #     return _check_for_default_credential()
 
 
 def _check_for_default_credential():
     _credential_env = os.getenv('GOOGLE_APPLICATION_CREDENTIALS', None)
     if not _credential_env:
-        raise Exception(
+        return Exception(
             "GCP credentials not found in the VM, " +
             "Please set GOOGLE_APPLICATION_CREDENTIALS in global env")
 

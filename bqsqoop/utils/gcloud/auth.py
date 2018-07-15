@@ -1,20 +1,22 @@
 import os
 
 
-def setup_credentials(config):
-    """Setups up GCP credentials using key from vm or from config
+def setup_credentials(key=None):
+    """Setups up GCP credentials
+
+    If key's given will setup gcloud utils configs from it,
+    else will check for existence default credentials to use
 
     Args:
-        config (dict): Config dict of the Sqoop Job
+        key (str): Google service account key json string
 
     Returns:
         None
     """
-    _use_default_acc = config.get('use_default_service_account', False)
-    if _use_default_acc:
-        _check_for_default_credential()
+    if key:
+        _setup_credentials_from_config(key)
     else:
-        _setup_credentials_from_config(config)
+        _check_for_default_credential()
 
 
 def _check_for_default_credential():
@@ -25,11 +27,8 @@ def _check_for_default_credential():
             "Please set GOOGLE_APPLICATION_CREDENTIALS in global env")
 
 
-def _setup_credentials_from_config(config):
-    _service_account_key = config.get('service_account_key_file')
-    if not _service_account_key:
-        raise Exception("service_account_key_file not set in config")
+def _setup_credentials_from_config(key):
     _service_account_key_file = '/tmp/gcp_service_account_key.json'
     with open(_service_account_key_file, 'w+') as f:
-        f.write(_service_account_key)
+        f.write(key)
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = _service_account_key_file

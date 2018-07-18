@@ -6,3 +6,6 @@ install:
   - pip install -e .
   - pip install -r test-requirements.txt
 script: make ci
+after_success:
+  - pip install python-coveralls
+  - coveralls

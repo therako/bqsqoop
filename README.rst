@@ -17,8 +17,8 @@ A command line interface for sqooping data to Google BigQuery
     :target: https://pypi.python.org/pypi/bq-sqoop/
     :alt: Package status
 
-.. image:: https://coveralls.io/repos/github/therako/bq-sqoop/badge.svg?branch=master
-    :target: https://coveralls.io/github/therako/bq-sqoop?branch=master
+.. image:: https://coveralls.io/repos/github/therako/bqsqoop/badge.svg?branch=master
+    :target: https://coveralls.io/github/therako/bqsqoop?branch=master
     :alt: Package coverage
 
 

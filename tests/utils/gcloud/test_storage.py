@@ -41,20 +41,22 @@ class TestCopyFiles(unittest.TestCase):
     @patch('google.cloud.storage.Client')
     def test_valid_gcs_path(self, storage_client):
         _files = ["file1", "file2"]
+        _gcs_project = "gcs_project_1"
         _valid_path = "gs://gcs_bucket"
-        copy_files_to_gcs(_files, _valid_path)
+        copy_files_to_gcs(_files, _valid_path, _gcs_project)
 
     @patch('google.cloud.storage.Client')
     def test_invalid_gcs_path(self, storage_client):
         _files = ["file1", "file2"]
+        _gcs_project = "gcs_project_1"
         _invalid_path = "gcs_bucket"
         with pytest.raises(
                 Exception, match=r'Not a valid GCS tmp path.'):
-            copy_files_to_gcs(_files, _invalid_path)
+            copy_files_to_gcs(_files, _invalid_path, _gcs_project)
         _invalid_path = "gs://"
         with pytest.raises(
                 Exception, match=r'Not a valid GCS tmp path.'):
-            copy_files_to_gcs(_files, _invalid_path)
+            copy_files_to_gcs(_files, _invalid_path, _gcs_project)
 
     @patch('uuid.uuid4', return_value="F43C2651-18C8-4EB0-82D2-10E3C7226015")
     @patch('google.cloud.storage.Client')
@@ -69,8 +71,8 @@ class TestCopyFiles(unittest.TestCase):
         _mock_storage.get_bucket = MagicMock(return_value=_mock_bucket)
         _mock_blob.upload_from_filename = MagicMock()
 
-        copy_files_to_gcs(_files, _gcs_bucket_path, True)
-        storage_client.assert_called()
+        copy_files_to_gcs(_files, _gcs_bucket_path, "gcs_project_1", True)
+        storage_client.assert_called_with(project="gcs_project_1")
         _mock_storage.get_bucket.assert_called_with("gcs_bucket")
         _call_args = _mock_bucket.blob.call_args_list
         self.assertEqual(
@@ -86,18 +88,18 @@ class TestDeleteFilesIn(unittest.TestCase):
     @patch('google.cloud.storage.Client')
     def test_valid_gcs_path(self, storage_client):
         _valid_path = "gs://gcs_bucket"
-        delete_files_in(_valid_path)
+        delete_files_in(_valid_path, "gcs_project_1")
 
     @patch('google.cloud.storage.Client')
     def test_invalid_gcs_path(self, storage_client):
         _invalid_path = "gcs_bucket"
         with pytest.raises(
                 Exception, match=r'Not a valid GCS tmp path.'):
-            delete_files_in(_invalid_path)
+            delete_files_in(_invalid_path, "gcs_project_1")
         _invalid_path = "gs://"
         with pytest.raises(
                 Exception, match=r'Not a valid GCS tmp path.'):
-            delete_files_in(_invalid_path)
+            delete_files_in(_invalid_path, "gcs_project_1")
 
     @patch('google.cloud.storage.Client')
     def test_file_uploads(self, storage_client):
@@ -109,8 +111,8 @@ class TestDeleteFilesIn(unittest.TestCase):
         _mock_bucket.list_blobs = MagicMock(return_value=_mock_blobs)
         _mock_storage.get_bucket = MagicMock(return_value=_mock_bucket)
 
-        delete_files_in(_gcs_bucket_path, "*.log")
-        storage_client.assert_called()
+        delete_files_in(_gcs_bucket_path, "gcs_project_1", "*.log")
+        storage_client.assert_called_with(project="gcs_project_1")
         _mock_storage.get_bucket.assert_called_with("gcs_bucket")
         _mock_bucket.list_blobs.assert_called_with(prefix="tmp_path/tmp2/",
                                                    delimiter="*.log")

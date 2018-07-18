@@ -44,6 +44,7 @@ class TestBigqueryParquetLoadJob(unittest.TestCase):
         _job.execute(_files)
         setup_credentials.assert_called_with(_configs["service_account_key"])
         copy_files_to_gcs.assert_called_with(_files, _configs["gcs_tmp_path"],
+                                             "gcp_project_1",
                                              use_new_tmp_folder=True)
         load_parquet_files.assert_called_with(
             copy_files_to_gcs.return_value + "*.parq",
@@ -52,4 +53,5 @@ class TestBigqueryParquetLoadJob(unittest.TestCase):
             _configs["table_name"],
             write_truncate=False
         )
-        delete_files_in.assert_called_with(copy_files_to_gcs.return_value)
+        delete_files_in.assert_called_with(
+            copy_files_to_gcs.return_value, "gcp_project_1")

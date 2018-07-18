@@ -5,7 +5,8 @@ import logging
 from google.cloud import storage
 
 
-def copy_files_to_gcs(files, gcs_bucket_path, use_new_tmp_folder=False):
+def copy_files_to_gcs(files, gcs_bucket_path, project_id,
+                      use_new_tmp_folder=False):
     """copies given files to GCS bucket path
 
     Args:
@@ -20,7 +21,7 @@ def copy_files_to_gcs(files, gcs_bucket_path, use_new_tmp_folder=False):
         str: path to the folder in gcs where the files are uploaded
     """
     _validate_gcs_path(gcs_bucket_path)
-    _client = storage.Client()
+    _client = storage.Client(project=project_id)
     _bucket_name, _sub_folder = _get_details_from_gcs_path(
         gcs_bucket_path, use_new_tmp_folder)
     _bucket = _client.get_bucket(_bucket_name)
@@ -31,7 +32,7 @@ def copy_files_to_gcs(files, gcs_bucket_path, use_new_tmp_folder=False):
     return "gs://" + _bucket_name + "/" + _sub_folder
 
 
-def delete_files_in(gcs_bucket_path, delimiter=None):
+def delete_files_in(gcs_bucket_path, project_id, delimiter=None):
     """Deletes all files in given GCS bucket path
 
     Args:
@@ -44,7 +45,7 @@ def delete_files_in(gcs_bucket_path, delimiter=None):
         None
     """
     _validate_gcs_path(gcs_bucket_path)
-    _client = storage.Client()
+    _client = storage.Client(project=project_id)
     _bucket_name, _sub_folder = _get_details_from_gcs_path(
         gcs_bucket_path, False)
     _bucket = _client.get_bucket(_bucket_name)

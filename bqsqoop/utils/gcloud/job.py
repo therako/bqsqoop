@@ -48,6 +48,7 @@ class BigqueryParquetLoadJob():
             None if the job is successful, errors if failed
         """
         _gcs_dest_path = storage.copy_files_to_gcs(files, self._gcs_tmp_path,
+                                                   self._project_id,
                                                    use_new_tmp_folder=True)
         bigquery.load_parquet_files(
             _gcs_dest_path + "*.parq",
@@ -56,4 +57,4 @@ class BigqueryParquetLoadJob():
             self._table_name,
             write_truncate=self._write_truncate
         )
-        storage.delete_files_in(_gcs_dest_path)
+        storage.delete_files_in(_gcs_dest_path, self._project_id)

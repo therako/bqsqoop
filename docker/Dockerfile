@@ -1,5 +1,5 @@
 FROM python:3.6-stretch
 
-RUN pip install Cython==0.28.4 bq-sqoop==VERSION
+RUN pip install bq-sqoop==VERSION
 
 CMD ["bq-sqoop"]

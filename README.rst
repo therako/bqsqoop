@@ -1,6 +1,27 @@
 A command line interface for sqooping data to Google BigQuery
 =============================================================
 
+.. image:: https://travis-ci.org/therako/bqsqoop.svg?branch=master
+    :target: https://travis-ci.org/therako/bqsqoop
+    :alt: Build Status
+
+.. image:: https://img.shields.io/pypi/v/bq-sqoop.svg
+    :target: https://pypi.python.org/pypi/bq-sqoop/
+    :alt: Latest Version
+
+.. image:: https://img.shields.io/pypi/pyversions/bq-sqoop.svg
+    :target: https://pypi.python.org/pypi/bq-sqoop/
+    :alt: Python versions
+
+.. image:: https://img.shields.io/pypi/status/bq-sqoop.svg
+    :target: https://pypi.python.org/pypi/bq-sqoop/
+    :alt: Package status
+
+.. image:: https://coveralls.io/repos/github/therako/bq-sqoop/badge.svg?branch=master
+    :target: https://coveralls.io/github/therako/bq-sqoop?branch=master
+    :alt: Package coverage
+
+
 This project is to just have a simple cli command to export data from ES, postgres, etc using the CPU's,
 It's intended to be used in Data workflow for extracting data out.
 

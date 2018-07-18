@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 import sys
+import re
 import argparse
 import logging
+import requests
 import toml
 
 from bqsqoop import __version__
@@ -12,20 +14,39 @@ from bqsqoop.job import Job
 p = argparse.ArgumentParser(
     description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 p.add_argument(
-    '-v', '--version', action='version',
-    version='%(prog)s ' + __version__,
-    help='Show version and exit.')
+    "-v", "--version", action="version",
+    version="%(prog)s " + __version__,
+    help="Show version and exit.")
 p.add_argument(
-    '-c', '--config_file', type=str, required=True,
-    help='Toml Config file for the bq-sqoop job.')
+    "-c", "--config_file", type=str, required=True,
+    help="Toml Config file for the bq-sqoop job." +
+    "Can be a local file path or a public http link " +
+    "eg, https://storage.googleapis.com/sample_config.toml " +
+    "or /tmp/sample_config.toml")
 p.add_argument(
-    '-d', '--debug', dest='debug_mode', action='store_true', help='Debug mode on.')
+    "-d", "--debug", dest="debug_mode", action="store_true", help="Debug mode on.")
 
 
-if __name__ == '__main__':
+def _read_from_url(url):
+    resp = requests.get(url=url)
+    return toml.loads(resp.text)
+
+
+def _get_configs(config_path):
+    _url_regex = r"^https?:\/\/.+.toml$"
+    _match_obj = re.match(_url_regex, config_path)
+    if _match_obj:
+        return _read_from_url(config_path)
+    else:
+        # Read from local file
+        return toml.load(config_path)
+
+
+if __name__ == "__main__":
     if len(sys.argv) == 1:
         p.print_help()
         exit()
     _opts = p.parse_args()
-    _configs = toml.load(_opts.config_file)
+
+    _configs = _get_configs(_opts.config_file)
     _ = Job(_configs, debug_mode=_opts.debug_mode).execute()

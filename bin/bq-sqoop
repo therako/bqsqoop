@@ -9,10 +9,12 @@ import toml
 
 from bqsqoop import __version__
 from bqsqoop.job import Job
+from bqsqoop.utils.gcloud.storage import download_file_as_string
 
 
 p = argparse.ArgumentParser(
-    description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    description=__doc__,
+    formatter_class=argparse.RawDescriptionHelpFormatter)
 p.add_argument(
     "-v", "--version", action="version",
     version="%(prog)s " + __version__,
@@ -20,25 +22,36 @@ p.add_argument(
 p.add_argument(
     "-c", "--config_file", type=str, required=True,
     help="Toml Config file for the bq-sqoop job." +
-    "Can be a local file path or a public http link " +
+    "Can be a local file path or a public http link or a GCS file" +
     "eg, https://storage.googleapis.com/sample_config.toml " +
+    "or gs://gcs_bucket/sample_config.toml " +
     "or /tmp/sample_config.toml")
 p.add_argument(
-    "-d", "--debug", dest="debug_mode", action="store_true", help="Debug mode on.")
+    "-d", "--debug", dest="debug_mode", action="store_true",
+    help="Debug mode on.")
 
 
 def _read_from_url(url):
+    print("Reading config from URL %s" % url)
     resp = requests.get(url=url)
     return toml.loads(resp.text)
 
 
+def _read_from_gcs(gcs_path):
+    print("Reading config from GCS %s" % gcs_path)
+    content = download_file_as_string(gcs_path)
+    return toml.loads(content.decode("utf-8"))
+
+
 def _get_configs(config_path):
-    _url_regex = r"^https?:\/\/.+.toml$"
-    _match_obj = re.match(_url_regex, config_path)
-    if _match_obj:
+    http_regex = r"^https?:\/\/.+.toml$"
+    gcs_regex = r"^gs:\/\/.+.toml$"
+    if re.match(http_regex, config_path):
         return _read_from_url(config_path)
+    elif re.match(gcs_regex, config_path):
+        return _read_from_gcs(config_path)
     else:
-        # Read from local file
+        print("Reading config from local file %s" % config_path)
         return toml.load(config_path)
 
 

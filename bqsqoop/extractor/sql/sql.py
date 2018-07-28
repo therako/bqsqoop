@@ -57,7 +57,6 @@ class SQLExtractor(Extractor):
                 end_pos=None
             )
             return [res]
-        
 
     def _add_filter_to_query(self):
         min_id, max_id = self._get_min_max()

@@ -17,8 +17,6 @@ class SQLExtractor(Extractor):
     def __init__(self, _config):
         super().__init__(_config)
         self._no_of_workers = self._config.get('no_of_workers', 1)
-        self._timeout_in_secs = self._config.get('timeout_in_secs', '60')
-        self._scroll_size = self._config.get('scroll_size', 1000)
         self._output_folder = self._config.get(
             'output_folder', "./" + str(uuid.uuid4())[:8])
 

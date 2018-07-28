@@ -75,7 +75,8 @@ class SQLExtractor(Extractor):
     def _get_extract_job_fn_and_params(self, split_range):
         start_pos = end_pos = None
         if split_range:
-            start_pos, end_pos = split_range
+            start_pos = split_range['start']
+            end_pos = split_range['end']
         return dict(worker_callback=helper.export_to_parquet,
                     sql_bind=self._config['sql_bind'],
                     query=self._config['query'],

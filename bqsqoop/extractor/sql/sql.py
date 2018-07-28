@@ -47,14 +47,11 @@ class SQLExtractor(Extractor):
             logging.debug('Waiting for Extractor job results...')
             return _async_worker.get_job_results()
         else:
-            res = helper.export_to_csv(
-                worker_id=1,
-                sql_bind=self._config['sql_bind'],
-                query=self._config['query'],
-                filter_field=None,
-                output_folder=self._output_folder,
-                start_pos=None,
-                end_pos=None
+            args = self._get_extract_job_fn_and_params(None)
+            del args['worker_callback']
+            res = helper.export_to_parquet(
+                worker_id=0,
+                **args
             )
             return [res]
 
@@ -78,11 +75,13 @@ class SQLExtractor(Extractor):
         return min_id, max_id
 
     def _get_extract_job_fn_and_params(self, split_range):
-        start_pos, end_pos = split_range
-        return dict(worker_callback=helper.export_to_csv,
+        start_pos = end_pos = None
+        if split_range:
+            start_pos, end_pos = split_range
+        return dict(worker_callback=helper.export_to_parquet,
                     sql_bind=self._config['sql_bind'],
                     query=self._config['query'],
-                    filter_field=self._config['filter_field'],
+                    filter_field=self._config.get('filter_field'),
                     output_folder=self._output_folder,
                     start_pos=start_pos,
                     end_pos=end_pos)

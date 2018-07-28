@@ -1,10 +1,12 @@
 from .iextractor import Extractor   # noqa
 from .elasticsearch import ElasticSearchExtractor
+from .sql import SQLExtractor
 
 
 _extractors = {
     "es": ElasticSearchExtractor,
     "elasticsearch": ElasticSearchExtractor,
+    "sql": SQLExtractor,
 }
 
 

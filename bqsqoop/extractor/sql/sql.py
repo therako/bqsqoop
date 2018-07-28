@@ -35,17 +35,29 @@ class SQLExtractor(Extractor):
         return None
 
     def extract_to_parquet(self):
-        _async_worker = async_worker.AsyncWorker(
-            self._no_of_workers)
         if self._no_of_workers > 1:
-            self._add_filter_to_query()
-        for i in range(self._no_of_workers):
-            _async_worker.send_data_to_worker(
-                worker_id=i,
-                **self._get_extract_job_fn_and_params()
+            _async_worker = async_worker.AsyncWorker(
+                self._no_of_workers)
+            splits = self._add_filter_to_query()
+            for i in range(self._no_of_workers):
+                _async_worker.send_data_to_worker(
+                    worker_id=i,
+                    **self._get_extract_job_fn_and_params(splits[i])
+                )
+            logging.debug('Waiting for Extractor job results...')
+            return _async_worker.get_job_results()
+        else:
+            res = helper.export_to_csv(
+                worker_id=1,
+                sql_bind=self._config['sql_bind'],
+                query=self._config['query'],
+                filter_field=None,
+                output_folder=self._output_folder,
+                start_pos=None,
+                end_pos=None
             )
-        logging.debug('Waiting for Extractor job results...')
-        return _async_worker.get_job_results()
+            return [res]
+        
 
     def _add_filter_to_query(self):
         min_id, max_id = self._get_min_max()
@@ -66,26 +78,12 @@ class SQLExtractor(Extractor):
             sql_bind, sql_min_max_query).fetchone()
         return min_id, max_id
 
-    def _get_extract_job_fn_and_params(self):
-        search_args = dict(
-            index=self._config['index'],
-            scroll=self._timeout_in_secs,
-            size=self._scroll_size,
-            body={
-                'query': {
-                    'match_all': {}
-                }
-            }
-        )
-        if '_all' not in self._fields:
-            search_args['_source_include'] = ','.join(
-                self._fields)
-        _fields = helper.ESHelper.get_fields(
-            self._config['url'], self._config['index'])
-        return dict(worker_callback=helper.ESHelper.scroll_and_extract_data,
-                    total_worker_count=self._no_of_workers,
-                    es_hosts=self._config['url'],
-                    es_timeout=self._timeout_in_secs,
+    def _get_extract_job_fn_and_params(self, split_range):
+        start_pos, end_pos = split_range
+        return dict(worker_callback=helper.export_to_csv,
+                    sql_bind=self._config['sql_bind'],
+                    query=self._config['query'],
+                    filter_field=self._config['filter_field'],
                     output_folder=self._output_folder,
-                    search_args=search_args,
-                    fields=_fields)
+                    start_pos=start_pos,
+                    end_pos=end_pos)

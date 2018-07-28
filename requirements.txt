@@ -17,6 +17,10 @@ Cython==0.28.4
 pyarrow
 
 
-# Elaticsearch
+# for Elaticsearch extractor
 elasticsearch>=6.0.0,<7.0.0
 elasticsearch-dsl>=6.0.0,<7.0.0
+
+# for SQL extractor
+sqlalchemy==1.2.10
+psycopg2==2.7

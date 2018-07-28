@@ -2,6 +2,7 @@ import unittest
 import pytest
 
 from bqsqoop.extractor.elasticsearch import ElasticSearchExtractor
+from bqsqoop.extractor.sql import SQLExtractor
 from bqsqoop.extractor import get_extractor_for
 
 
@@ -27,3 +28,8 @@ class TestGetExtractorFor(unittest.TestCase):
         _config = {'extractor': {'elasticsearch': {}}}
         _class = get_extractor_for(_config)
         self.assertEquals(type(_class), ElasticSearchExtractor)
+
+    def test_get_sql_extractor(self):
+        _config = {'extractor': {'sql': {}}}
+        _class = get_extractor_for(_config)
+        self.assertEquals(type(_class), SQLExtractor)

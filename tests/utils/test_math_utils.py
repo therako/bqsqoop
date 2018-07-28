@@ -1,3 +1,4 @@
+import pytest
 import unittest
 
 from datetime import datetime
@@ -74,3 +75,9 @@ class TestCalculateSplits(unittest.TestCase):
                 'end': datetime(2018, 1, 1, 0, 0, 12)
             }]
         self.assertEqual(splits, expected_splits)
+
+    def test_unknown_type(self):
+        with pytest.raises(
+                Exception,
+                match=r'Type of the split-by column is not supported.'):
+            calculate_splits(3.4, 267.5, 10)

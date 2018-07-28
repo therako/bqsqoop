@@ -22,8 +22,9 @@ def export_to_csv(worker_id, sql_bind, query, filter_field, start_pos, end_pos,
         output_file = os.path.join(output_folder, "{}.parq".format(
             str(uuid.uuid4())[:8]))
         if start_pos and end_pos:
-            query = "{0} WHERE {1} >= {2} AND {1} <= {3}".format(
-                query, filter_field, start_pos, end_pos)
+            filter_query = "{0} >= {1} AND {0} <= {2}".format(
+                filter_field, start_pos, end_pos)
+            query = query % filter_query
         parquetUtil = parquet_util.ParquetUtil(output_file)
         engine = create_engine(sql_bind, pool_timeout=300)
         connection = engine.connect()

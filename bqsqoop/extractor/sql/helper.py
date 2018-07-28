@@ -5,18 +5,19 @@ import logging
 import traceback
 import pandas as pd
 
-from sqlalchemy import create_engine
+import sqlalchemy
 from bqsqoop.utils import parquet_util
 
 
 def get_results_cursor(sql_bind, query, pool_timeout=300):
-    engine = create_engine(sql_bind, pool_timeout=pool_timeout)
+    engine = sqlalchemy.create_engine(sql_bind, pool_timeout=pool_timeout)
     connection = engine.connect()
     return connection.execute(query)
 
 
-def export_to_csv(worker_id, sql_bind, query, filter_field, start_pos, end_pos,
-                  output_folder, progress_bar=True, fetch_size=1000):
+def export_to_parquet(worker_id, sql_bind, query, filter_field, start_pos,
+                      end_pos, output_folder, progress_bar=True,
+                      fetch_size=1000):
     try:
         start_time = int(time.time())
         output_file = os.path.join(output_folder, "{}.parq".format(
@@ -26,7 +27,7 @@ def export_to_csv(worker_id, sql_bind, query, filter_field, start_pos, end_pos,
                 filter_field, start_pos, end_pos)
             query = query % filter_query
         parquetUtil = parquet_util.ParquetUtil(output_file)
-        engine = create_engine(sql_bind, pool_timeout=300)
+        engine = sqlalchemy.create_engine(sql_bind, pool_timeout=300)
         connection = engine.connect()
         for chunk in pd.read_sql_query(
             sql=query,

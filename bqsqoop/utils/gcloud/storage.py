@@ -3,6 +3,7 @@ import uuid
 import logging
 
 from google.cloud import storage
+from bqsqoop.utils import async_worker
 
 
 def copy_files_to_gcs(files, gcs_bucket_path, project_id,
@@ -30,6 +31,31 @@ def copy_files_to_gcs(files, gcs_bucket_path, project_id,
         blob = bucket.blob(folder_path + filename)
         blob.upload_from_filename(filename=file)
     return "gs://" + bucket_name + "/" + folder_path
+
+
+def parallel_copy_files_to_gcs(files, gcs_bucket_path, project_id,
+                               use_new_tmp_folder=False):
+    """copies given files to GCS bucket path using multi-process
+
+    Same as copy_files_to_gcs, except this method does a parallel upload
+    one file per process.
+    """
+    _validate_gcs_path(gcs_bucket_path)
+    _async_worker = async_worker.AsyncWorker(len(files))
+    if use_new_tmp_folder:
+        # Add tmp folder outside and make sure all files are in the same path
+        gcs_bucket_path = gcs_bucket_path + str(uuid.uuid4()) + "/"
+    for file in files:
+        _async_worker.send_data_to_worker(
+            worker_callback=copy_files_to_gcs,
+            files=[file],
+            gcs_bucket_path=gcs_bucket_path,
+            project_id=project_id,
+            use_new_tmp_folder=False
+        )
+    logging.debug('Waiting for all files to be uploaded to GCS...')
+    _async_worker.get_job_results()
+    return gcs_bucket_path
 
 
 def delete_files_in(gcs_bucket_path, project_id, delimiter=None):

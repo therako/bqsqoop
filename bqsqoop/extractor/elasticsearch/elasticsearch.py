@@ -61,11 +61,13 @@ class ElasticSearchExtractor(Extractor):
                 }
             }
         )
+        _fields = helper.ESHelper.get_fields(
+            self._config['url'], self._config['index'])
         if '_all' not in self._fields:
             search_args['_source_include'] = ','.join(
                 self._fields)
-        _fields = helper.ESHelper.get_fields(
-            self._config['url'], self._config['index'])
+        else:
+            search_args['_source_include'] = ','.join(_fields.keys())
         fn_params = dict(
             worker_callback=helper.ESHelper.scroll_and_extract_data,
             total_worker_count=self._no_of_workers,

@@ -31,15 +31,24 @@ class ElasticSearchExtractor(Extractor):
         return None
 
     def extract_to_parquet(self):
-        _async_worker = async_worker.AsyncWorker(
-            self._no_of_workers)
-        for i in range(self._no_of_workers):
-            _async_worker.send_data_to_worker(
-                worker_id=i,
-                **self._get_extract_job_fn_and_params()
+        if self._no_of_workers > 1:
+            _async_worker = async_worker.AsyncWorker(
+                self._no_of_workers)
+            for i in range(self._no_of_workers):
+                _async_worker.send_data_to_worker(
+                    worker_id=i,
+                    **self._get_extract_job_fn_and_params()
+                )
+            logging.debug('Waiting for Extractor job results...')
+            return _async_worker.get_job_results()
+        else:
+            args = self._get_extract_job_fn_and_params()
+            del args['worker_callback']
+            res = helper.ESHelper.scroll_and_extract_data(
+                worker_id=0,
+                **args
             )
-        logging.debug('Waiting for Extractor job results...')
-        return _async_worker.get_job_results()
+            return [res]
 
     def _get_extract_job_fn_and_params(self):
         search_args = dict(
@@ -52,15 +61,21 @@ class ElasticSearchExtractor(Extractor):
                 }
             }
         )
+        _fields = helper.ESHelper.get_fields(
+            self._config['url'], self._config['index'])
         if '_all' not in self._fields:
             search_args['_source_include'] = ','.join(
                 self._fields)
-        _fields = helper.ESHelper.get_fields(
-            self._config['url'], self._config['index'])
-        return dict(worker_callback=helper.ESHelper.scroll_and_extract_data,
-                    total_worker_count=self._no_of_workers,
-                    es_hosts=self._config['url'],
-                    es_timeout=self._timeout,
-                    output_folder=self._output_folder,
-                    search_args=search_args,
-                    fields=_fields)
+        else:
+            search_args['_source_include'] = ','.join(_fields.keys())
+        fn_params = dict(
+            worker_callback=helper.ESHelper.scroll_and_extract_data,
+            total_worker_count=self._no_of_workers,
+            es_hosts=self._config['url'],
+            es_timeout=self._timeout,
+            output_folder=self._output_folder,
+            search_args=search_args,
+            fields=_fields)
+        if "datetime_format" in self._config:
+            fn_params["datetime_format"] = self._config["datetime_format"]
+        return fn_params

@@ -47,6 +47,7 @@ class TestExtractToParquet(unittest.TestCase):
         _valid_config['no_of_workers'] = 2
         _e = ElasticSearchExtractor(_valid_config)
         es_helper.get_fields = MagicMock()
+        es_helper.get_fields.return_value = {"fieldA": "int", "fieldB": "bool"}
         _mock_worker = MagicMock()
         async_worker.return_value = _mock_worker
         _mock_send_data_to_worker = MagicMock()
@@ -55,7 +56,8 @@ class TestExtractToParquet(unittest.TestCase):
         _mock_worker.get_job_results = _mock_job_results
         _search_args = {
             'index': 'some_es_index', 'scroll': '60s',
-            'size': 1000, 'body': {'query': {'match_all': {}}}
+            'size': 1000, 'body': {'query': {'match_all': {}}},
+            '_source_include': 'fieldA,fieldB'
         }
 
         self.assertEqual(_e.extract_to_parquet(), ["file1.parq"])
@@ -82,33 +84,27 @@ class TestExtractToParquet(unittest.TestCase):
 
     @patch('uuid.uuid4', return_value="F43C2651-18C8-4EB0-82D2-10E3C7226015")
     @patch('bqsqoop.extractor.elasticsearch.helper.ESHelper')
-    @patch('bqsqoop.utils.async_worker.AsyncWorker')
-    def test_extract_specific_fields(self, async_worker, es_helper, mock_uuid):
+    def test_extract_specific_fields_with_single_worker(
+            self, es_helper, mock_uuid):
         _valid_config['no_of_workers'] = 1
         _valid_config['fields'] = ['field1', 'field2']
         _e = ElasticSearchExtractor(_valid_config)
         es_helper.get_fields = MagicMock()
-        _mock_worker = MagicMock()
-        async_worker.return_value = _mock_worker
-        _mock_send_data_to_worker = MagicMock()
-        _mock_worker.send_data_to_worker = _mock_send_data_to_worker
-        _mock_job_results = MagicMock(return_value=["file1.parq"])
-        _mock_worker.get_job_results = _mock_job_results
-        _search_args = {
-            'index': 'some_es_index', 'scroll': '60s', 'size': 1000,
-            'body': {
-                'query': {
-                    'match_all': {},
-                    '_source_include': 'field1,field2'
-                }
-            }
-        }
+        es_helper.get_fields.return_value = {
+            "field1": "int", "field2": "bool", "ignored_field": "text"}
+        es_helper.scroll_and_extract_data.return_value = "file1.parq"
 
         self.assertEqual(_e.extract_to_parquet(), ["file1.parq"])
-        _call_args = _mock_send_data_to_worker.call_args_list
-        _, _kwargs1 = _call_args[0]
-        _search_args = {
-            'index': 'some_es_index', 'scroll': '60s', 'size': 1000,
-            'body': {'query': {'match_all': {}}},
-            '_source_include': 'field1,field2'}
-        self.assertEqual(_kwargs1['search_args'], _search_args)
+        es_helper.scroll_and_extract_data.assert_called_with(
+            es_hosts='es_endpoint', es_timeout='60s',
+            fields={
+                "field1": "int", "field2": "bool",
+                "ignored_field": "text"},
+            search_args={
+                'index': 'some_es_index', 'scroll': '60s', 'size': 1000,
+                'body': {'query': {'match_all': {}}},
+                '_source_include': 'field1,field2'},
+            total_worker_count=1,
+            worker_id=0,
+            output_folder='./F43C2651'
+        )

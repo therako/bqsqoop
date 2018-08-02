@@ -21,14 +21,16 @@ class ESHelper():
                 _properties = index_type_value['properties']
                 _keys = list(_properties.keys())
                 for _key in _keys:
-                    _fields[_key] = _properties[_key]["type"]
+                    if "type" in _properties[_key]:
+                        _fields[_key] = _properties[_key]["type"]
                 break
         return _fields
 
     @classmethod
     def scroll_and_extract_data(self, worker_id, total_worker_count, es_hosts,
                                 es_timeout, search_args, fields,
-                                output_folder, progress_bar=True):
+                                output_folder, progress_bar=True,
+                                datetime_format="%Y-%m-%dT%H:%M:%S"):
         _es = self._get_es_client(es_hosts)
         search_args = self._add_slice_if_needed(
             total_worker_count, search_args, worker_id)
@@ -37,34 +39,36 @@ class ESHelper():
         _page = _es.search(**search_args)
         _data, _sid = self._get_data_from_es_page(_page)
         _total_hits = self._get_total_hits(_page)
-        df = None
         _parquetUtil = parquet_util.ParquetUtil(_output_file)
         _pbar = ProgressBar(
             total_length=_total_hits, position=worker_id, enabled=progress_bar)
         if _data:
-            df = pd.DataFrame.from_dict(_data)
-            self._fix_types_from_es(df, fields)
-            _parquetUtil.append_df_to_parquet(df)
-            _pbar.move_progress(len(_data))
+            self._write_data(_data, fields, _parquetUtil,
+                             _pbar, datetime_format)
             while True:
                 _page = _es.scroll(scroll_id=_sid, scroll=es_timeout)
                 _data, _sid = self._get_data_from_es_page(_page)
                 if _data:
-                    df = pd.DataFrame.from_dict(_data)
-                    self._fix_types_from_es(df, fields)
-                    _parquetUtil.append_df_to_parquet(df)
-                    _pbar.move_progress(len(_data))
+                    self._write_data(_data, fields, _parquetUtil, _pbar,
+                                     datetime_format)
                 else:
                     break
         _parquetUtil.close()
         return _output_file
 
     @classmethod
-    def _fix_types_from_es(self, df, fields):
+    def _write_data(self, data, fields, parquetUtil, pbar, datetime_format):
+        df = pd.DataFrame.from_dict(data)
+        self._fix_types_from_es(df, fields, datetime_format=datetime_format)
+        parquetUtil.append_df_to_parquet(df)
+        pbar.move_progress(len(data))
+
+    @classmethod
+    def _fix_types_from_es(self, df, fields, datetime_format):
         for _name, _type in fields.items():
             if _type == "date":
                 df[_name] = pd.to_datetime(
-                    df[_name], format="%Y-%m-%dT%H:%M:%S")
+                    df[_name], format=datetime_format)
 
     @classmethod
     def _output_file_for(self, output_folder, index):

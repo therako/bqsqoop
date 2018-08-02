@@ -57,10 +57,14 @@ class ElasticSearchExtractor(Extractor):
                 self._fields)
         _fields = helper.ESHelper.get_fields(
             self._config['url'], self._config['index'])
-        return dict(worker_callback=helper.ESHelper.scroll_and_extract_data,
-                    total_worker_count=self._no_of_workers,
-                    es_hosts=self._config['url'],
-                    es_timeout=self._timeout,
-                    output_folder=self._output_folder,
-                    search_args=search_args,
-                    fields=_fields)
+        fn_params = dict(
+            worker_callback=helper.ESHelper.scroll_and_extract_data,
+            total_worker_count=self._no_of_workers,
+            es_hosts=self._config['url'],
+            es_timeout=self._timeout,
+            output_folder=self._output_folder,
+            search_args=search_args,
+            fields=_fields)
+        if "datetime_format" in self._config:
+            fn_params["datetime_format"] = self._config["datetime_format"]
+        return fn_params

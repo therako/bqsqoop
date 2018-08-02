@@ -31,15 +31,24 @@ class ElasticSearchExtractor(Extractor):
         return None
 
     def extract_to_parquet(self):
-        _async_worker = async_worker.AsyncWorker(
-            self._no_of_workers)
-        for i in range(self._no_of_workers):
-            _async_worker.send_data_to_worker(
-                worker_id=i,
-                **self._get_extract_job_fn_and_params()
+        if self._no_of_workers > 1:
+            _async_worker = async_worker.AsyncWorker(
+                self._no_of_workers)
+            for i in range(self._no_of_workers):
+                _async_worker.send_data_to_worker(
+                    worker_id=i,
+                    **self._get_extract_job_fn_and_params()
+                )
+            logging.debug('Waiting for Extractor job results...')
+            return _async_worker.get_job_results()
+        else:
+            args = self._get_extract_job_fn_and_params()
+            del args['worker_callback']
+            res = helper.ESHelper.scroll_and_extract_data(
+                worker_id=0,
+                **args
             )
-        logging.debug('Waiting for Extractor job results...')
-        return _async_worker.get_job_results()
+            return [res]
 
     def _get_extract_job_fn_and_params(self):
         search_args = dict(

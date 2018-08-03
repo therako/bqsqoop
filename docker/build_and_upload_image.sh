@@ -1,8 +1,6 @@
-#!/bin/bash
+#!/bin/bash -e
 
 VERSION=$(cat bqsqoop/__init__.py | awk '{print $3}' | sed s/\"//g)
-
-sed -i '.bkp' s/VERSION/${VERSION}/g ./docker/Dockerfile
 
 docker build . -f ./docker/Dockerfile -t therako/bqsqoop:${VERSION}
 docker push therako/bqsqoop:${VERSION}

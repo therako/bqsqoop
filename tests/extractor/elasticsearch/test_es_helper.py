@@ -212,6 +212,81 @@ class TestESHelper(unittest.TestCase):
     @patch('uuid.uuid4', return_value="F43C2651-18C8-4EB0-82D2-10E3C7226015")
     @patch('bqsqoop.utils.parquet_util.ParquetUtil')
     @patch('elasticsearch.Elasticsearch')
+    def test_date_type_parsing_ignore_invalid_data(
+            self, elasticsearch, parquet_util, uuid):
+        _mock_es = MagicMock()
+        elasticsearch.return_value = _mock_es
+        _search_args = {'index': 'some_es_index'}
+        _fields = {'field1': 'date'}
+        _search_result = {
+            '_scroll_id': '_scroll_id1',
+            'hits': {
+                'total': 3,
+                'hits': [{
+                    '_index': 'some_es_index',
+                    '_source': {
+                        'field1': 'Fri, 03 Aug 2018 03:18:40 GMT'
+                    }
+                }]
+            }
+        }
+        _mock_es.search = MagicMock(return_value=_search_result)
+        _mock_es.scroll = MagicMock(return_value={})
+
+        _mock_parquet_util = MagicMock()
+        parquet_util.return_value = _mock_parquet_util
+        ESHelper.scroll_and_extract_data(
+            worker_id=0, total_worker_count=1, es_hosts=['url'],
+            es_timeout='60s', search_args=_search_args.copy(), fields=_fields,
+            output_folder='_output_folder'
+        )
+        _call_list = _mock_parquet_util.append_df_to_parquet.call_args_list
+        _args, _ = _call_list[0]
+        _df = _args[0]
+        self.assertEqual(
+            _df.to_json(), '{"field1":{"0":null}}')
+
+    @patch('uuid.uuid4', return_value="F43C2651-18C8-4EB0-82D2-10E3C7226015")
+    @patch('bqsqoop.utils.parquet_util.ParquetUtil')
+    @patch('elasticsearch.Elasticsearch')
+    def test_date_type_parsing_custom_format(
+            self, elasticsearch, parquet_util, uuid):
+        _mock_es = MagicMock()
+        elasticsearch.return_value = _mock_es
+        _search_args = {'index': 'some_es_index'}
+        _fields = {'field1': 'date'}
+        _search_result = {
+            '_scroll_id': '_scroll_id1',
+            'hits': {
+                'total': 3,
+                'hits': [{
+                    '_index': 'some_es_index',
+                    '_source': {
+                        'field1': 'Fri, 03 Aug 2018 03:18:40 GMT'
+                    }
+                }]
+            }
+        }
+        _mock_es.search = MagicMock(return_value=_search_result)
+        _mock_es.scroll = MagicMock(return_value={})
+
+        _mock_parquet_util = MagicMock()
+        parquet_util.return_value = _mock_parquet_util
+        ESHelper.scroll_and_extract_data(
+            worker_id=0, total_worker_count=1, es_hosts=['url'],
+            es_timeout='60s', search_args=_search_args.copy(), fields=_fields,
+            output_folder='_output_folder',
+            datetime_format="%a, %d %b %Y %H:%M:%S %Z"
+        )
+        _call_list = _mock_parquet_util.append_df_to_parquet.call_args_list
+        _args, _ = _call_list[0]
+        _df = _args[0]
+        self.assertEqual(
+            _df.to_json(), '{"field1":{"0":1533266320000}}')
+
+    @patch('uuid.uuid4', return_value="F43C2651-18C8-4EB0-82D2-10E3C7226015")
+    @patch('bqsqoop.utils.parquet_util.ParquetUtil')
+    @patch('elasticsearch.Elasticsearch')
     def test_slicing_for_sharded_calls(
             self, elasticsearch, parquet_util, uuid):
         _mock_es = MagicMock()

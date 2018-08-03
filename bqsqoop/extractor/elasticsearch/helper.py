@@ -68,7 +68,7 @@ class ESHelper():
         for _name, _type in fields.items():
             if _type == "date":
                 df[_name] = pd.to_datetime(
-                    df[_name], format=datetime_format)
+                    df[_name], format=datetime_format, errors="coerce")
 
     @classmethod
     def _output_file_for(self, output_folder, index):

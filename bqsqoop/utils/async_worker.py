@@ -39,14 +39,11 @@ class AsyncWorker(object):
             and a final RuntimeError will be raisen.
         """
         _job_results = []
-        raise_error = False
-        all_futures = wait(self._futures).done
-        for x in all_futures:
-            try:
+        try:
+            all_futures = wait(self._futures).done
+            for x in all_futures:
                 _job_results.append((x.result()))
-            except Exception as exc:
-                logging.error('A slice ended with Exception: %s' % exc)
-                raise_error = True
-        if raise_error:
+        except Exception as exc:
+            logging.error('A slice ended with Exception: %s' % exc)
             raise RuntimeError("One or more worker ended in Exception.")
         return _job_results

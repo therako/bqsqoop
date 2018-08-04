@@ -58,7 +58,7 @@ which is made available through the ``help`` command.
     arguments:
         -h, --help            show this help message and exit
         -v, --version         Show version and exit.
-        -c CONFIG_FILE, --config_file CONFIG_FILE
+        -c CONFIG_FILE,       --config_file CONFIG_FILE
                                 Toml Config file for the bq-sqoop job.Can be a local
                                 file path or a public http link or a GCS fileeg,
                                 https://storage.googleapis.com/sample_config.toml or
@@ -69,3 +69,60 @@ which is made available through the ``help`` command.
 
 Configuration files
 ----------------------
+You can find an example repository at https://github.com/therako/bqsqoop-examples.git
+
+=========================
+Configuration objects
+=========================
+
+1. Bigquery_
+    .. _Bigquery:
+
+2. Extractor_
+    .. _Extractor:
+
+    * Elasticsearch_
+        .. _Elasticsearch:
+
+    * SQL_
+        .. _SQL:
+
+
+Bigquery
+----------------------
+
+.. code-block:: shell
+
+    [bigquery]
+    project_id="destination-google-project-id"
+    dataset_name="destination-dataset"
+    table_name="destination-table-name"
+    gcs_tmp_path="gs://gcs-tmp-bucket/bqsqoop/"
+
+
+Extractor
+----------------------
+
+=========================
+Elasticsearch
+=========================
+
+.. code-block:: shell
+
+    [extractor.elasticsearch]
+    url="localhost:9200,localhost:9201"
+    index="source-es-index-name"
+    timeout="60s"
+    scroll_size=500
+    fields=["_all"]
+
+
+=========================
+SQL
+=========================
+
+.. code-block:: shell
+
+    [extractor.sql]
+    sql_bind="postgresql+psycopg2://username:password@127.0.0.1:5432/database"
+    query="select * from table_name"

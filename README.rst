@@ -56,5 +56,16 @@ which is made available through the ``help`` command.
     usage: bq-sqoop -h
 
     arguments:
-      -h, --help            show this help message and exit
-      --debug               Debug mode on.
+        -h, --help            show this help message and exit
+        -v, --version         Show version and exit.
+        -c CONFIG_FILE, --config_file CONFIG_FILE
+                                Toml Config file for the bq-sqoop job.Can be a local
+                                file path or a public http link or a GCS fileeg,
+                                https://storage.googleapis.com/sample_config.toml or
+                                gs://gcs_bucket/sample_config.toml or
+                                /tmp/sample_config.toml
+        -d, --debug           Debug mode on.
+
+
+Configuration files
+----------------------

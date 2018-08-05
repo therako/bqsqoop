@@ -61,26 +61,13 @@ class ESHelper():
     def _write_data(self, data, fields, parquetUtil, pbar, datetime_format,
                     type_cast):
         df = pd.DataFrame.from_dict(data)
-        self._fix_types_from_es(df, fields, datetime_format=datetime_format)
-        self._cast_types(df, type_cast)
+        datetime_fields = [k for k, v in fields.items() if v == "date"]
+        df = parquetUtil.fix_dataframe(df, type_castings=type_cast,
+                                       datetime_format=datetime_format,
+                                       datetime_fields=datetime_fields,
+                                       column_schema=fields)
         parquetUtil.append_df_to_parquet(df)
         pbar.move_progress(len(data))
-
-    @classmethod
-    def _fix_types_from_es(self, df, fields, datetime_format):
-        for _name, _type in fields.items():
-            if _type == "date":
-                df[_name] = pd.to_datetime(
-                    df[_name], format=datetime_format, errors="coerce")
-
-    @classmethod
-    def _cast_types(self, df, type_cast):
-        for _name, _type in type_cast.items():
-            if _type == "string":
-                df[[_name]] = df[[_name]].astype(str)
-            else:
-                raise Exception("Type cast not implemented for type %s"
-                                % _type)
 
     @classmethod
     def _output_file_for(self, output_folder, index):

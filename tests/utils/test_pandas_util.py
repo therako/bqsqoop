@@ -55,36 +55,27 @@ class TestPandasUtil(unittest.TestCase):
                 df, type_castings={"colA": "wrong_type", "colC": "string"}
             )
 
-    # def test_add_missing_columns(self):
-    #     data = [
-    #         dict(colA=2),
-    #         dict(colA=6),
-    #     ]
-    #     df = pd.DataFrame.from_dict(data)
-    #     df_after_fix = PandasUtil.fix_dataframe(
-    #         df, column_schema={
-    #             "colA": "string",
-    #             "colB": "string",
-    #             "colC": "str",
-    #             "colD": "text",
-    #             "colE": "integer",
-    #             "colF": "float",
-    #             "colG": "bool"
-    #         }
-    #     )
-    #     self.assertEqual(df_after_fix.columns.tolist(), [
-    #                      'colA', 'colB', 'colC', 'colD',
-    #                      'colE', 'colF', 'colG'])
-    #     self.assertEqual(df_after_fix["colA"][0], 2)
-    #     self.assertEqual(df_after_fix["colA"][1], 6)
-    #     self.check_missing_col(df_after_fix, "colB", "object")
-    #     self.check_missing_col(df_after_fix, "colC", "object")
-    #     self.check_missing_col(df_after_fix, "colD", "object")
-    #     self.check_missing_col(df_after_fix, "colE", "float64")
-    #     self.check_missing_col(df_after_fix, "colF", "float64")
-    #     self.check_missing_col(df_after_fix, "colG", "object")
+    def test_add_missing_columns(self):
+        data = [
+            dict(colA=2),
+            dict(colA=6),
+        ]
+        df = pd.DataFrame.from_dict(data)
+        df_after_fix = PandasUtil.fix_dataframe(
+            df, column_schema={
+                "colA": "string",
+                "colB": "text",
+                "colE": "integer"
+            }
+        )
+        self.assertEqual(df_after_fix.columns.tolist(),
+                         ['colA', 'colB', 'colE'])
+        self.assertEqual(df_after_fix["colA"][0], 2)
+        self.assertEqual(df_after_fix["colA"][1], 6)
+        self.check_missing_col(df_after_fix, "colB", "object")
+        self.check_missing_col(df_after_fix, "colE", "object")
 
-    # def check_missing_col(self, df, col_name, col_type):
-    #     self.assertEqual(df[col_name].dtype.name, col_type)
-    #     self.assertTrue(pd.isnull(df[col_name][0]))
-    #     self.assertTrue(pd.isnull(df[col_name][1]))
+    def check_missing_col(self, df, col_name, col_type):
+        self.assertEqual(df[col_name].dtype.name, col_type)
+        self.assertTrue(pd.isnull(df[col_name][0]))
+        self.assertTrue(pd.isnull(df[col_name][1]))

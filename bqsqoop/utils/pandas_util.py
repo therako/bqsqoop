@@ -64,18 +64,7 @@ class PandasUtil():
     @classmethod
     def _fix_missing_columns(self, df, column_schema):
         found_cols = df.columns.tolist()
-        # column_types_map = {
-        #     "string": np.str,
-        #     "str": np.str,
-        #     "text": np.str,
-        #     "integer": np.int,
-        #     "long": np.int,
-        #     "float": np.float,
-        #     "bool": np.bool
-        # }
         for col_name, col_type in column_schema.items():
             if col_name not in found_cols:
-                # if col_type in column_types_map:
+                # Empty feilds can be string since pyarrow would fix it
                 df[col_name] = pd.Series(dtype=str)
-                # df[col_name] = df[col_name].dropna().apply(
-                #     column_types_map[col_type])

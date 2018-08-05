@@ -4,6 +4,7 @@ import elasticsearch
 import pandas as pd
 
 from bqsqoop.utils import parquet_util
+from bqsqoop.utils import pandas_util
 from bqsqoop.utils.progressbar_util import ProgressBar
 
 
@@ -44,14 +45,15 @@ class ESHelper():
         _pbar = ProgressBar(
             total_length=_total_hits, position=worker_id, enabled=progress_bar)
         if _data:
+            schema = _parquetUtil.build_pyarrow_schema(fields)
             self._write_data(_data, fields, _parquetUtil,
-                             _pbar, datetime_format, type_cast)
+                             _pbar, datetime_format, type_cast, schema)
             while True:
                 _page = _es.scroll(scroll_id=_sid, scroll=es_timeout)
                 _data, _sid = self._get_data_from_es_page(_page)
                 if _data:
                     self._write_data(_data, fields, _parquetUtil, _pbar,
-                                     datetime_format, type_cast)
+                                     datetime_format, type_cast, schema)
                 else:
                     break
         _parquetUtil.close()
@@ -59,28 +61,16 @@ class ESHelper():
 
     @classmethod
     def _write_data(self, data, fields, parquetUtil, pbar, datetime_format,
-                    type_cast):
+                    type_cast, schema):
         df = pd.DataFrame.from_dict(data)
-        self._fix_types_from_es(df, fields, datetime_format=datetime_format)
-        self._cast_types(df, type_cast)
-        parquetUtil.append_df_to_parquet(df)
+        datetime_fields = [k for k, v in fields.items() if v == "date"]
+        df = pandas_util.PandasUtil.fix_dataframe(
+            df,
+            type_castings=type_cast,
+            datetime_format=datetime_format, datetime_fields=datetime_fields,
+            column_schema=fields)
+        parquetUtil.append_df_to_parquet(df, schema=schema)
         pbar.move_progress(len(data))
-
-    @classmethod
-    def _fix_types_from_es(self, df, fields, datetime_format):
-        for _name, _type in fields.items():
-            if _type == "date":
-                df[_name] = pd.to_datetime(
-                    df[_name], format=datetime_format, errors="coerce")
-
-    @classmethod
-    def _cast_types(self, df, type_cast):
-        for _name, _type in type_cast.items():
-            if _type == "string":
-                df[[_name]] = df[[_name]].astype(str)
-            else:
-                raise Exception("Type cast not implemented for type %s"
-                                % _type)
 
     @classmethod
     def _output_file_for(self, output_folder, index):

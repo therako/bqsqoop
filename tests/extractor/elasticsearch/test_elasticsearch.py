@@ -99,8 +99,7 @@ class TestExtractToParquet(unittest.TestCase):
         es_helper.scroll_and_extract_data.assert_called_with(
             es_hosts='es_endpoint', es_timeout='60s',
             fields={
-                "field1": "int", "field2": "bool",
-                "ignored_field": "text"},
+                "field1": "int", "field2": "bool"},
             search_args={
                 'index': 'some_es_index', 'scroll': '60s', 'size': 1000,
                 'body': {'query': {'match_all': {}}},
@@ -131,8 +130,7 @@ class TestExtractToParquet(unittest.TestCase):
         es_helper.scroll_and_extract_data.assert_called_with(
             es_hosts='es_endpoint', es_timeout='60s',
             fields={
-                "field1": "int", "field2": "bool",
-                "ignored_field": "text"},
+                "field1": "int", "field2": "bool"},
             search_args={
                 'index': 'some_es_index', 'scroll': '60s', 'size': 1000,
                 'body': {'query': {'match_all': {}}},

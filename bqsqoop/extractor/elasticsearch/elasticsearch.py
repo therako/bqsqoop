@@ -67,8 +67,13 @@ class ElasticSearchExtractor(Extractor):
         if '_all' not in self._fields:
             search_args['_source_include'] = ','.join(
                 self._fields)
+            schema = {}
+            for k, v in _fields.items():
+                if k in self._fields:
+                    schema[k] = v
         else:
             search_args['_source_include'] = ','.join(_fields.keys())
+            schema = _fields
         fn_params = dict(
             worker_callback=helper.ESHelper.scroll_and_extract_data,
             total_worker_count=self._no_of_workers,
@@ -76,7 +81,7 @@ class ElasticSearchExtractor(Extractor):
             es_timeout=self._timeout,
             output_folder=self._output_folder,
             search_args=search_args,
-            fields=_fields,
+            fields=schema,
             type_cast=self._type_cast)
         if "datetime_format" in self._config:
             fn_params["datetime_format"] = self._config["datetime_format"]

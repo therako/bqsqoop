@@ -45,14 +45,15 @@ class ESHelper():
         _pbar = ProgressBar(
             total_length=_total_hits, position=worker_id, enabled=progress_bar)
         if _data:
+            schema = _parquetUtil.build_pyarrow_schema(fields)
             self._write_data(_data, fields, _parquetUtil,
-                             _pbar, datetime_format, type_cast)
+                             _pbar, datetime_format, type_cast, schema)
             while True:
                 _page = _es.scroll(scroll_id=_sid, scroll=es_timeout)
                 _data, _sid = self._get_data_from_es_page(_page)
                 if _data:
                     self._write_data(_data, fields, _parquetUtil, _pbar,
-                                     datetime_format, type_cast)
+                                     datetime_format, type_cast, schema)
                 else:
                     break
         _parquetUtil.close()
@@ -60,7 +61,7 @@ class ESHelper():
 
     @classmethod
     def _write_data(self, data, fields, parquetUtil, pbar, datetime_format,
-                    type_cast):
+                    type_cast, schema):
         df = pd.DataFrame.from_dict(data)
         datetime_fields = [k for k, v in fields.items() if v == "date"]
         df = pandas_util.PandasUtil.fix_dataframe(
@@ -68,7 +69,7 @@ class ESHelper():
             type_castings=type_cast,
             datetime_format=datetime_format, datetime_fields=datetime_fields,
             column_schema=fields)
-        parquetUtil.append_df_to_parquet(df)
+        parquetUtil.append_df_to_parquet(df, schema=schema)
         pbar.move_progress(len(data))
 
     @classmethod

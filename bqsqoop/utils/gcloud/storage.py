@@ -40,21 +40,30 @@ def parallel_copy_files_to_gcs(files, gcs_bucket_path, project_id,
     Same as copy_files_to_gcs, except this method does a parallel upload
     one file per process.
     """
+    _no_of_files = len(files)
     _validate_gcs_path(gcs_bucket_path)
-    _async_worker = async_worker.AsyncWorker(len(files))
+    _async_worker = async_worker.AsyncWorker(_no_of_files)
     if use_new_tmp_folder:
         # Add tmp folder outside and make sure all files are in the same path
         gcs_bucket_path = gcs_bucket_path + str(uuid.uuid4()) + "/"
-    for file in files:
-        _async_worker.send_data_to_worker(
-            worker_callback=copy_files_to_gcs,
-            files=[file],
+    if _no_of_files == 1:
+        copy_files_to_gcs(
+            files=[files[0]],
             gcs_bucket_path=gcs_bucket_path,
             project_id=project_id,
             use_new_tmp_folder=False
         )
-    logging.debug('Waiting for all files to be uploaded to GCS...')
-    _async_worker.get_job_results()
+    else:
+        for file in files:
+            _async_worker.send_data_to_worker(
+                worker_callback=copy_files_to_gcs,
+                files=[file],
+                gcs_bucket_path=gcs_bucket_path,
+                project_id=project_id,
+                use_new_tmp_folder=False
+            )
+        logging.debug('Waiting for all files to be uploaded to GCS...')
+        _async_worker.get_job_results()
     return gcs_bucket_path
 
 

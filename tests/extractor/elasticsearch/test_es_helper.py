@@ -75,6 +75,7 @@ class TestESHelper(unittest.TestCase):
         _mock_parquet_util = MagicMock()
         parquet_util.return_value = _mock_parquet_util
         pandas_util.fix_dataframe.return_value = "df_after_corrections"
+        _mock_parquet_util.build_pyarrow_schema.return_value = "pyarrow_schema"
 
         _output_file = ESHelper.scroll_and_extract_data(
             worker_id=0, total_worker_count=1, es_hosts=['url'],
@@ -93,6 +94,9 @@ class TestESHelper(unittest.TestCase):
             scroll='60s', scroll_id='_scroll_id1')
         parquet_util.assert_called_with(
             '_output_folder/some_es_index_F43C2651.parq')
+        _mock_parquet_util.build_pyarrow_schema.assert_called_with(
+            {'field1': 'text', 'field2': 'long', 'field3': 'date'}
+        )
         _call_list = pandas_util.fix_dataframe.call_args_list
         _args, _kwargs = _call_list[0]
         self.assertEqual(
@@ -106,7 +110,7 @@ class TestESHelper(unittest.TestCase):
                 'field1': 'text', 'field2': 'long', 'field3': 'date'}
         })
         _mock_parquet_util.append_df_to_parquet.assert_called_once_with(
-            "df_after_corrections")
+            "df_after_corrections", schema='pyarrow_schema')
 
     @patch('uuid.uuid4', return_value="F43C2651-18C8-4EB0-82D2-10E3C7226015")
     @patch('bqsqoop.utils.pandas_util.PandasUtil')
@@ -168,6 +172,7 @@ class TestESHelper(unittest.TestCase):
             "df_after_corrections2",
             "df_after_corrections3"
         ]
+        _mock_parquet_util.build_pyarrow_schema.return_value = "pyarrow_schema"
 
         ESHelper.scroll_and_extract_data(
             worker_id=0, total_worker_count=1, es_hosts=['url'],
@@ -178,6 +183,9 @@ class TestESHelper(unittest.TestCase):
         _args, _kwargs = _mock_es.search.call_args_list[0]
         self.assertEquals(_kwargs, {'index': 'some_es_index'})
         self.assertEqual(_mock_es.scroll.call_count, 3)
+        _mock_parquet_util.build_pyarrow_schema.assert_called_with(
+            {'field1': 'text'}
+        )
         _mock_es.scroll.assert_called_with(
             scroll='60s', scroll_id='_scroll_id1')
         _call_list = pandas_util.fix_dataframe.call_args_list
@@ -212,9 +220,9 @@ class TestESHelper(unittest.TestCase):
             "column_schema": {'field1': 'text'}
         })
         _mock_parquet_util.append_df_to_parquet.assert_has_calls([
-            call("df_after_corrections1"),
-            call("df_after_corrections2"),
-            call("df_after_corrections3")
+            call("df_after_corrections1", schema='pyarrow_schema'),
+            call("df_after_corrections2", schema='pyarrow_schema'),
+            call("df_after_corrections3", schema='pyarrow_schema')
         ])
 
     @patch('uuid.uuid4', return_value="F43C2651-18C8-4EB0-82D2-10E3C7226015")
@@ -236,6 +244,7 @@ class TestESHelper(unittest.TestCase):
         _mock_parquet_util = MagicMock()
         parquet_util.return_value = _mock_parquet_util
         pandas_util.fix_dataframe.return_value = "df_after_corrections"
+        _mock_parquet_util.build_pyarrow_schema.return_value = "pyarrow_schema"
         ESHelper.scroll_and_extract_data(
             worker_id=1, total_worker_count=2, es_hosts=['url'],
             es_timeout='60s', search_args=_search_args.copy(), fields=_fields,

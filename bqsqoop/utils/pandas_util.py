@@ -33,14 +33,17 @@ class PandasUtil():
                         "column_name_3": "int",
                         ..etc
                     }
+
+        Returns: (pandas.Dataframe)
+            returns pandas dataframe with all fixes
         """
         _df = df.copy()
+        if column_schema:
+            self._fix_missing_columns(_df, column_schema)
         self._cast_types(_df, type_castings)
         if datetime_format:
             self._fix_datetime(
                 _df, datetime_fields, datetime_format)
-        if column_schema:
-            self._fix_missing_columns(_df, column_schema)
         return _df
 
     @classmethod
@@ -60,8 +63,7 @@ class PandasUtil():
 
     @classmethod
     def _fix_missing_columns(self, df, column_schema):
-        pass
-        # found_cols = df.columns.tolist()
+        found_cols = df.columns.tolist()
         # column_types_map = {
         #     "string": np.str,
         #     "str": np.str,
@@ -71,9 +73,9 @@ class PandasUtil():
         #     "float": np.float,
         #     "bool": np.bool
         # }
-        # for col_name, col_type in column_schema.items():
-        #     if col_name not in found_cols:
-        #         if col_type in column_types_map:
-        #             df[col_name] = pd.Series()
-        #             df[col_name] = df[col_name].dropna().apply(
-        #                 column_types_map[col_type])
+        for col_name, col_type in column_schema.items():
+            if col_name not in found_cols:
+                # if col_type in column_types_map:
+                df[col_name] = pd.Series(dtype=str)
+                # df[col_name] = df[col_name].dropna().apply(
+                #     column_types_map[col_type])

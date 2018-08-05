@@ -38,8 +38,8 @@ class ParquetUtil():
             "long": pa.int64(),
             "float": pa.float64(),
             "bool": pa.binary(),
-            "date": pa.timestamp('ms'),
-            "datetime": pa.timestamp('ms')
+            "date": pa.timestamp('ns'),
+            "datetime": pa.timestamp('ns')
         }
         for col_name, col_type in column_schema.items():
             fields.append(

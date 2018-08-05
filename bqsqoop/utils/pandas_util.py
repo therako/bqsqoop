@@ -6,7 +6,32 @@ class PandasUtil():
     def fix_dataframe(self, df, type_castings={},
                       datetime_fields=[], datetime_format=None,
                       column_schema={}):
-        """To do fixes like data types, type_castings and empty columns
+        """To do fixes like date formats, type_castings and empty columns
+
+        Args:
+            df (pandas dataframe): Dataframe to apply fixes on.
+                Will be cloned and fixes would be applied on the clone
+            type_castings (dict): Field and new types to which the columns
+                have to be casted to. eg.,
+                    {"cast_column_1", "string", "cast_column_2", "string"}
+                will raise exception if to_cast type is wrong
+            datetime_fields (list_of_str): Column names of type datetime
+                Only needed if datetime_format is specified. eg.,
+                    ["date_column_1", "date_column_2"]
+            datetime_format (str): datetime format in which the string date
+                fields have to be parsed from. eg.,
+                    "%a, %d %b %Y %H:%M:%S %Z"
+                    for 'Fri, 03 Aug 2018 03:18:40 GMT'
+                Data that doesn't follow the format will be converted as null
+            column_schema (dict): A schema of columne_name -> type,
+                if any of the provided columns are not found,
+                this will help create a null column for it. eg.,
+                    {
+                        "column_name_1": "string",
+                        "column_name_2": "date",
+                        "column_name_3": "int",
+                        ..etc
+                    }
         """
         _df = df.copy()
         self._cast_types(_df, type_castings)

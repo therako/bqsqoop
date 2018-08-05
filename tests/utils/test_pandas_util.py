@@ -51,6 +51,6 @@ class TestPandasUtil(unittest.TestCase):
         with pytest.raises(
                 Exception,
                 match=r'Type cast not implemented for type wrong_type'):
-            df_after_fix = PandasUtil.fix_dataframe(
+            PandasUtil.fix_dataframe(
                 df, type_castings={"colA": "wrong_type", "colC": "string"}
             )

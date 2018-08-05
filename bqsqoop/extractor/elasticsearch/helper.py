@@ -30,7 +30,8 @@ class ESHelper():
     def scroll_and_extract_data(self, worker_id, total_worker_count, es_hosts,
                                 es_timeout, search_args, fields,
                                 output_folder, progress_bar=True,
-                                datetime_format="%Y-%m-%dT%H:%M:%S"):
+                                datetime_format="%Y-%m-%dT%H:%M:%S",
+                                type_cast={}):
         _es = self._get_es_client(es_hosts)
         search_args = self._add_slice_if_needed(
             total_worker_count, search_args, worker_id)
@@ -44,22 +45,24 @@ class ESHelper():
             total_length=_total_hits, position=worker_id, enabled=progress_bar)
         if _data:
             self._write_data(_data, fields, _parquetUtil,
-                             _pbar, datetime_format)
+                             _pbar, datetime_format, type_cast)
             while True:
                 _page = _es.scroll(scroll_id=_sid, scroll=es_timeout)
                 _data, _sid = self._get_data_from_es_page(_page)
                 if _data:
                     self._write_data(_data, fields, _parquetUtil, _pbar,
-                                     datetime_format)
+                                     datetime_format, type_cast)
                 else:
                     break
         _parquetUtil.close()
         return _output_file
 
     @classmethod
-    def _write_data(self, data, fields, parquetUtil, pbar, datetime_format):
+    def _write_data(self, data, fields, parquetUtil, pbar, datetime_format,
+                    type_cast):
         df = pd.DataFrame.from_dict(data)
         self._fix_types_from_es(df, fields, datetime_format=datetime_format)
+        self._cast_types(df, type_cast)
         parquetUtil.append_df_to_parquet(df)
         pbar.move_progress(len(data))
 
@@ -69,6 +72,15 @@ class ESHelper():
             if _type == "date":
                 df[_name] = pd.to_datetime(
                     df[_name], format=datetime_format, errors="coerce")
+
+    @classmethod
+    def _cast_types(self, df, type_cast):
+        for _name, _type in type_cast.items():
+            if _type == "string":
+                df[[_name]] = df[[_name]].astype(str)
+            else:
+                raise Exception("Type cast not implemented for type %s"
+                                % _type)
 
     @classmethod
     def _output_file_for(self, output_folder, index):

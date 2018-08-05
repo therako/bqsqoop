@@ -19,6 +19,7 @@ class ElasticSearchExtractor(Extractor):
         self._fields = self._config.get('fields', ['_all'])
         self._output_folder = self._config.get(
             'output_folder', "./" + str(uuid.uuid4())[:8])
+        self._type_cast = self._config.get('type_cast', {})
 
     def validate_config(self):
         """Validates required configs for Elasticsearch extraction
@@ -75,7 +76,8 @@ class ElasticSearchExtractor(Extractor):
             es_timeout=self._timeout,
             output_folder=self._output_folder,
             search_args=search_args,
-            fields=_fields)
+            fields=_fields,
+            type_cast=self._type_cast)
         if "datetime_format" in self._config:
             fn_params["datetime_format"] = self._config["datetime_format"]
         return fn_params

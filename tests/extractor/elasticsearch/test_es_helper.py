@@ -1,3 +1,4 @@
+import pytest
 import unittest
 
 from unittest.mock import patch, MagicMock
@@ -283,6 +284,83 @@ class TestESHelper(unittest.TestCase):
         _df = _args[0]
         self.assertEqual(
             _df.to_json(), '{"field1":{"0":1533266320000}}')
+
+    @patch('uuid.uuid4', return_value="F43C2651-18C8-4EB0-82D2-10E3C7226015")
+    @patch('bqsqoop.utils.parquet_util.ParquetUtil')
+    @patch('elasticsearch.Elasticsearch')
+    def test_type_casting_columns(
+            self, elasticsearch, parquet_util, uuid):
+        _mock_es = MagicMock()
+        elasticsearch.return_value = _mock_es
+        _search_args = {'index': 'some_es_index'}
+        _fields = {}
+        _search_result = {
+            '_scroll_id': '_scroll_id1',
+            'hits': {
+                'total': 3,
+                'hits': [{
+                    '_index': 'some_es_index',
+                    '_source': {
+                        'castToStringField': 23,
+                        'intField': 23
+                    }
+                }]
+            }
+        }
+        _mock_es.search = MagicMock(return_value=_search_result)
+        _mock_es.scroll = MagicMock(return_value={})
+
+        _mock_parquet_util = MagicMock()
+        parquet_util.return_value = _mock_parquet_util
+        ESHelper.scroll_and_extract_data(
+            worker_id=0, total_worker_count=1, es_hosts=['url'],
+            es_timeout='60s', search_args=_search_args.copy(), fields=_fields,
+            output_folder='_output_folder',
+            type_cast={'castToStringField': "string"}
+        )
+        _call_list = _mock_parquet_util.append_df_to_parquet.call_args_list
+        _args, _ = _call_list[0]
+        _df = _args[0]
+        self.assertEqual(
+            _df.to_json(),
+            '{"castToStringField":{"0":"23"},"intField":{"0":23}}')
+
+    @patch('uuid.uuid4', return_value="F43C2651-18C8-4EB0-82D2-10E3C7226015")
+    @patch('bqsqoop.utils.parquet_util.ParquetUtil')
+    @patch('elasticsearch.Elasticsearch')
+    def test_type_casting_unknown_type(
+            self, elasticsearch, parquet_util, uuid):
+        _mock_es = MagicMock()
+        elasticsearch.return_value = _mock_es
+        _search_args = {'index': 'some_es_index'}
+        _fields = {}
+        _search_result = {
+            '_scroll_id': '_scroll_id1',
+            'hits': {
+                'total': 3,
+                'hits': [{
+                    '_index': 'some_es_index',
+                    '_source': {
+                        'castToStringField': 23,
+                        'intField': 23
+                    }
+                }]
+            }
+        }
+        _mock_es.search = MagicMock(return_value=_search_result)
+        _mock_es.scroll = MagicMock(return_value={})
+
+        _mock_parquet_util = MagicMock()
+        parquet_util.return_value = _mock_parquet_util
+        with pytest.raises(
+                Exception,
+                match=r'Type cast not implemented for type unknown_format'):
+            ESHelper.scroll_and_extract_data(
+                worker_id=0, total_worker_count=1, es_hosts=['url'],
+                es_timeout='60s', search_args=_search_args.copy(),
+                fields=_fields, output_folder='_output_folder',
+                type_cast={'castToStringField': "unknown_format"}
+            )
 
     @patch('uuid.uuid4', return_value="F43C2651-18C8-4EB0-82D2-10E3C7226015")
     @patch('bqsqoop.utils.parquet_util.ParquetUtil')

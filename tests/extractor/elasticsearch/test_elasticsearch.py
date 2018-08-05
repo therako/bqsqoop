@@ -86,9 +86,10 @@ class TestExtractToParquet(unittest.TestCase):
     @patch('bqsqoop.extractor.elasticsearch.helper.ESHelper')
     def test_extract_specific_fields_with_single_worker(
             self, es_helper, mock_uuid):
-        _valid_config['no_of_workers'] = 1
-        _valid_config['fields'] = ['field1', 'field2']
-        _e = ElasticSearchExtractor(_valid_config)
+        config = _valid_config.copy()
+        config['no_of_workers'] = 1
+        config['fields'] = ['field1', 'field2']
+        _e = ElasticSearchExtractor(config)
         es_helper.get_fields = MagicMock()
         es_helper.get_fields.return_value = {
             "field1": "int", "field2": "bool", "ignored_field": "text"}
@@ -106,5 +107,41 @@ class TestExtractToParquet(unittest.TestCase):
                 '_source_include': 'field1,field2'},
             total_worker_count=1,
             worker_id=0,
-            output_folder='./F43C2651'
+            output_folder='./F43C2651',
+            type_cast={}
+        )
+
+    @patch('uuid.uuid4', return_value="F43C2651-18C8-4EB0-82D2-10E3C7226015")
+    @patch('bqsqoop.extractor.elasticsearch.helper.ESHelper')
+    def test_custom_datetime_format_and_type_cast(self, es_helper, mock_uuid):
+        config = _valid_config.copy()
+        config['no_of_workers'] = 1
+        config['fields'] = ['field1', 'field2']
+        config['datetime_format'] = "some datetime_format"
+        config['type_cast'] = {
+            'field1': "string"
+        }
+        _e = ElasticSearchExtractor(config)
+        es_helper.get_fields = MagicMock()
+        es_helper.get_fields.return_value = {
+            "field1": "int", "field2": "bool", "ignored_field": "text"}
+        es_helper.scroll_and_extract_data.return_value = "file1.parq"
+
+        self.assertEqual(_e.extract_to_parquet(), ["file1.parq"])
+        es_helper.scroll_and_extract_data.assert_called_with(
+            es_hosts='es_endpoint', es_timeout='60s',
+            fields={
+                "field1": "int", "field2": "bool",
+                "ignored_field": "text"},
+            search_args={
+                'index': 'some_es_index', 'scroll': '60s', 'size': 1000,
+                'body': {'query': {'match_all': {}}},
+                '_source_include': 'field1,field2'},
+            total_worker_count=1,
+            worker_id=0,
+            output_folder='./F43C2651',
+            type_cast={
+                'field1': "string"
+            },
+            datetime_format='some datetime_format'
         )

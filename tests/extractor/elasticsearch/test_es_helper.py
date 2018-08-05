@@ -42,9 +42,11 @@ class TestESHelper(unittest.TestCase):
         _mock_es.indices.get_mapping.assert_called_with(index='some_es_index')
 
     @patch('uuid.uuid4', return_value="F43C2651-18C8-4EB0-82D2-10E3C7226015")
+    @patch('bqsqoop.utils.pandas_util.PandasUtil')
     @patch('bqsqoop.utils.parquet_util.ParquetUtil')
     @patch('elasticsearch.Elasticsearch')
-    def test_scroll_and_extract_data(self, elasticsearch, parquet_util, uuid):
+    def test_scroll_and_extract_data(self, elasticsearch, parquet_util,
+                                     pandas_util, uuid):
         _mock_es = MagicMock()
         elasticsearch.return_value = _mock_es
         _search_args = {'index': 'some_es_index'}
@@ -72,7 +74,7 @@ class TestESHelper(unittest.TestCase):
 
         _mock_parquet_util = MagicMock()
         parquet_util.return_value = _mock_parquet_util
-        _mock_parquet_util.fix_dataframe.return_value = "df_after_corrections"
+        pandas_util.fix_dataframe.return_value = "df_after_corrections"
 
         _output_file = ESHelper.scroll_and_extract_data(
             worker_id=0, total_worker_count=1, es_hosts=['url'],
@@ -91,7 +93,7 @@ class TestESHelper(unittest.TestCase):
             scroll='60s', scroll_id='_scroll_id1')
         parquet_util.assert_called_with(
             '_output_folder/some_es_index_F43C2651.parq')
-        _call_list = _mock_parquet_util.fix_dataframe.call_args_list
+        _call_list = pandas_util.fix_dataframe.call_args_list
         _args, _kwargs = _call_list[0]
         self.assertEqual(
             _args[0].to_json(),
@@ -107,10 +109,11 @@ class TestESHelper(unittest.TestCase):
             "df_after_corrections")
 
     @patch('uuid.uuid4', return_value="F43C2651-18C8-4EB0-82D2-10E3C7226015")
+    @patch('bqsqoop.utils.pandas_util.PandasUtil')
     @patch('bqsqoop.utils.parquet_util.ParquetUtil')
     @patch('elasticsearch.Elasticsearch')
     def test_scroll_untill_no_data_left(
-            self, elasticsearch, parquet_util, uuid):
+            self, elasticsearch, parquet_util, pandas_util, uuid):
         _mock_es = MagicMock()
         elasticsearch.return_value = _mock_es
         _search_args = {'index': 'some_es_index'}
@@ -160,7 +163,7 @@ class TestESHelper(unittest.TestCase):
 
         _mock_parquet_util = MagicMock()
         parquet_util.return_value = _mock_parquet_util
-        _mock_parquet_util.fix_dataframe.side_effect = [
+        pandas_util.fix_dataframe.side_effect = [
             "df_after_corrections1",
             "df_after_corrections2",
             "df_after_corrections3"
@@ -177,7 +180,7 @@ class TestESHelper(unittest.TestCase):
         self.assertEqual(_mock_es.scroll.call_count, 3)
         _mock_es.scroll.assert_called_with(
             scroll='60s', scroll_id='_scroll_id1')
-        _call_list = _mock_parquet_util.fix_dataframe.call_args_list
+        _call_list = pandas_util.fix_dataframe.call_args_list
         _args, _kwargs = _call_list[0]
         self.assertEqual(
             _args[0].to_json(),
@@ -215,10 +218,11 @@ class TestESHelper(unittest.TestCase):
         ])
 
     @patch('uuid.uuid4', return_value="F43C2651-18C8-4EB0-82D2-10E3C7226015")
+    @patch('bqsqoop.utils.pandas_util.PandasUtil')
     @patch('bqsqoop.utils.parquet_util.ParquetUtil')
     @patch('elasticsearch.Elasticsearch')
     def test_slicing_for_sharded_calls(
-            self, elasticsearch, parquet_util, uuid):
+            self, elasticsearch, parquet_util, pandas_util, uuid):
         _mock_es = MagicMock()
         elasticsearch.return_value = _mock_es
         _search_args = {
@@ -231,7 +235,7 @@ class TestESHelper(unittest.TestCase):
 
         _mock_parquet_util = MagicMock()
         parquet_util.return_value = _mock_parquet_util
-        _mock_parquet_util.fix_dataframe.return_value = "df_after_corrections"
+        pandas_util.fix_dataframe.return_value = "df_after_corrections"
         ESHelper.scroll_and_extract_data(
             worker_id=1, total_worker_count=2, es_hosts=['url'],
             es_timeout='60s', search_args=_search_args.copy(), fields=_fields,

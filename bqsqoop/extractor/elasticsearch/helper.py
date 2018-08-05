@@ -4,6 +4,7 @@ import elasticsearch
 import pandas as pd
 
 from bqsqoop.utils import parquet_util
+from bqsqoop.utils import pandas_util
 from bqsqoop.utils.progressbar_util import ProgressBar
 
 
@@ -62,10 +63,11 @@ class ESHelper():
                     type_cast):
         df = pd.DataFrame.from_dict(data)
         datetime_fields = [k for k, v in fields.items() if v == "date"]
-        df = parquetUtil.fix_dataframe(df, type_castings=type_cast,
-                                       datetime_format=datetime_format,
-                                       datetime_fields=datetime_fields,
-                                       column_schema=fields)
+        df = pandas_util.PandasUtil.fix_dataframe(
+            df,
+            type_castings=type_cast,
+            datetime_format=datetime_format, datetime_fields=datetime_fields,
+            column_schema=fields)
         parquetUtil.append_df_to_parquet(df)
         pbar.move_progress(len(data))
 

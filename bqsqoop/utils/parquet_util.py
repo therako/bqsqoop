@@ -38,6 +38,7 @@ class ParquetUtil():
             "long": pa.int64(),
             "float": pa.float64(),
             "bool": pa.binary(),
+            "boolean": pa.binary(),
             "date": pa.timestamp('ns'),
             "datetime": pa.timestamp('ns')
         }

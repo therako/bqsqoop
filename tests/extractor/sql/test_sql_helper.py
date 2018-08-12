@@ -1,8 +1,7 @@
 import pytest
 import unittest
-import pandas as pd
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, call
 from bqsqoop.extractor.sql.helper import (
     get_results_cursor, export_to_parquet
 )
@@ -25,20 +24,24 @@ class TestSQLHelper(unittest.TestCase):
 
     @patch('uuid.uuid4', return_value="F43C2651-18C8-4EB0-82D2-10E3C7226015")
     @patch('bqsqoop.utils.parquet_util.ParquetUtil')
-    @patch('pandas.read_sql_query')
     @patch('sqlalchemy.create_engine')
-    def test_export_to_parquet(self, create_engine, read_sql_query,
-                               parquet_util, uuid):
+    def test_export_to_parquet(self, create_engine, parquet_util, uuid):
         mock_engine = MagicMock()
         mock_connection = MagicMock()
         create_engine.return_value = mock_engine
         mock_engine.connect.return_value = mock_connection
-
-        read_sql_query.return_value = iter([
-            pd.DataFrame(data={'col1': [1, 2], 'col2': [3, 4]}),
-            pd.DataFrame(data={'col1': [5, 6], 'col2': [7, 8]})
-        ])
-
+        mock_connection.execution_options.return_value = mock_connection
+        mock_proxy = MagicMock()
+        mock_connection.execute.return_value = mock_proxy
+        mock_proxy.fetchmany.side_effect = [
+            [[1, 3], [2, 4]],
+            [[5, 7], [6, 8]],
+            None
+        ]
+        mock_proxy.cursor.description = [
+            ('col1', "info"),
+            ('col2', "info")
+        ]
         mock_parquet_util = MagicMock()
         parquet_util.return_value = mock_parquet_util
 
@@ -46,19 +49,19 @@ class TestSQLHelper(unittest.TestCase):
             worker_id=1, sql_bind="sql_bind", query="query %s",
             filter_field="filter_field", start_pos=34,
             end_pos=402, output_folder="output_folder/",
-            progress_bar=False, fetch_size=100
+            progress_bar=False, fetch_size=200
         )
         self.assertEqual(output_file,
                          "output_folder/F43C2651.parq")
         create_engine.assert_called_with("sql_bind", pool_timeout=300)
         mock_engine.connect.assert_called_with()
-        read_sql_query.assert_called_with(
-            sql="query filter_field >= 34 AND filter_field <= 402",
-            con=mock_connection,
-            chunksize=100
-        )
+        mock_connection.execution_options.assert_called_with(
+            stream_results=True)
+        mock_connection.execute.assert_called_with(
+            "query filter_field >= 34 AND filter_field <= 402")
+        mock_proxy.fetchmany.assert_has_calls(
+            [call(200), call(200), call(200)])
         call_list = mock_parquet_util.append_df_to_parquet.call_args_list
-        print(call_list)
         args, _ = call_list[0]
         df = args[0]
         self.assertEqual(
@@ -70,20 +73,25 @@ class TestSQLHelper(unittest.TestCase):
 
     @patch('uuid.uuid4', return_value="F43C2651-18C8-4EB0-82D2-10E3C7226015")
     @patch('bqsqoop.utils.parquet_util.ParquetUtil')
-    @patch('pandas.read_sql_query')
     @patch('sqlalchemy.create_engine')
     def test_export_to_parquet_with_no_start_and_end_filters(
-            self, create_engine, read_sql_query, parquet_util, uuid):
+            self, create_engine, parquet_util, uuid):
         mock_engine = MagicMock()
         mock_connection = MagicMock()
         create_engine.return_value = mock_engine
         mock_engine.connect.return_value = mock_connection
-
-        read_sql_query.return_value = iter([
-            pd.DataFrame(data={'col1': [1, 2], 'col2': [3, 4]}),
-            pd.DataFrame(data={'col1': [5, 6], 'col2': [7, 8]})
-        ])
-
+        mock_connection.execution_options.return_value = mock_connection
+        mock_proxy = MagicMock()
+        mock_connection.execute.return_value = mock_proxy
+        mock_proxy.fetchmany.side_effect = [
+            [[1, 3], [2, 4]],
+            [[5, 7], [6, 8]],
+            None
+        ]
+        mock_proxy.cursor.description = [
+            ('col1', "info"),
+            ('col2', "info")
+        ]
         mock_parquet_util = MagicMock()
         parquet_util.return_value = mock_parquet_util
 
@@ -97,13 +105,12 @@ class TestSQLHelper(unittest.TestCase):
                          "output_folder/F43C2651.parq")
         create_engine.assert_called_with("sql_bind", pool_timeout=300)
         mock_engine.connect.assert_called_with()
-        read_sql_query.assert_called_with(
-            sql="query",
-            con=mock_connection,
-            chunksize=1000
-        )
+        mock_connection.execution_options.assert_called_with(
+            stream_results=True)
+        mock_connection.execute.assert_called_with("query")
+        mock_proxy.fetchmany.assert_has_calls(
+            [call(100), call(100), call(100)])
         call_list = mock_parquet_util.append_df_to_parquet.call_args_list
-        print(call_list)
         args, _ = call_list[0]
         df = args[0]
         self.assertEqual(
@@ -115,16 +122,15 @@ class TestSQLHelper(unittest.TestCase):
 
     @patch('uuid.uuid4', return_value="F43C2651-18C8-4EB0-82D2-10E3C7226015")
     @patch('bqsqoop.utils.parquet_util.ParquetUtil')
-    @patch('pandas.read_sql_query')
     @patch('sqlalchemy.create_engine')
     def test_export_to_parquet_exceptions(
-            self, create_engine, read_sql_query, parquet_util, uuid):
+            self, create_engine, parquet_util, uuid):
         mock_engine = MagicMock()
         mock_connection = MagicMock()
         create_engine.return_value = mock_engine
         mock_engine.connect.return_value = mock_connection
-
-        read_sql_query.side_effect = Exception('Test error')
+        mock_connection.execution_options.return_value = mock_connection
+        mock_connection.execute.side_effect = Exception('Test error')
 
         mock_parquet_util = MagicMock()
         parquet_util.return_value = mock_parquet_util

@@ -3,7 +3,7 @@ import pytest
 import unittest
 import pandas as pd
 
-from datetime import datetime, timezone
+from datetime import datetime
 from bqsqoop.utils.pandas_util import PandasUtil
 
 

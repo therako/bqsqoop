@@ -4,11 +4,10 @@ import time
 import json
 import logging
 import traceback
-import numpy as np
 import pandas as pd
 
 import sqlalchemy
-from datetime import datetime, date
+from datetime import datetime
 from bqsqoop.utils import parquet_util, pandas_util
 
 
@@ -16,6 +15,14 @@ def get_results_cursor(sql_bind, query, pool_timeout=300):
     engine = sqlalchemy.create_engine(sql_bind, pool_timeout=pool_timeout)
     connection = engine.connect()
     return connection.execute(query)
+
+
+def get_streaming_result_proxy(sql_bind, query, pool_timeout=300):
+    engine = sqlalchemy.create_engine(sql_bind, pool_timeout=pool_timeout)
+    connection = engine.connect()
+    proxy = connection.execution_options(
+        stream_results=True).execute(query)
+    return proxy
 
 
 def export_to_parquet(worker_id, sql_bind, query, filter_field, start_pos,
@@ -32,15 +39,17 @@ def export_to_parquet(worker_id, sql_bind, query, filter_field, start_pos,
         parquetUtil = parquet_util.ParquetUtil(output_file)
         logging.debug(output_file)
         logging.debug(query)
-        engine = sqlalchemy.create_engine(sql_bind, pool_timeout=3000)
-        connection = engine.connect()
-        proxy = connection.execution_options(
-            stream_results=True).execute(query)
+        proxy = get_streaming_result_proxy(sql_bind, query)
         results = proxy.fetchmany(fetch_size)
+        columns = [key[0] for key in proxy.cursor.description]
         while True:
             if results:
-                items = (
-                    [dict(zip([key[0] for key in proxy.cursor.description], _data_type_transform(row))) for row in results])  # noqa
+                items = []
+                for row in results:
+                    row_dict = {}
+                    for x, y in zip(columns, row):
+                        row_dict[x] = _data_type_transform(y)
+                    items.append(row_dict)
                 df = pd.DataFrame.from_dict(items)
                 df = pandas_util.PandasUtil.fix_dataframe(
                     df, drop_timezones=True)

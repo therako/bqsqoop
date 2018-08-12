@@ -1,12 +1,15 @@
 import os
 import uuid
 import time
+import json
 import logging
 import traceback
+import numpy as np
 import pandas as pd
 
 import sqlalchemy
-from bqsqoop.utils import parquet_util
+from datetime import datetime, date
+from bqsqoop.utils import parquet_util, pandas_util
 
 
 def get_results_cursor(sql_bind, query, pool_timeout=300):
@@ -34,14 +37,13 @@ def export_to_parquet(worker_id, sql_bind, query, filter_field, start_pos,
         proxy = connection.execution_options(
             stream_results=True).execute(query)
         results = proxy.fetchmany(fetch_size)
-        logging.debug(results)
         while True:
             if results:
-                items = []
-                # for result in results:
-                items = ([dict(zip([key[0] for key in proxy.cursor.description], row)) for row in results])
-                logging.debug(items)
+                items = (
+                    [dict(zip([key[0] for key in proxy.cursor.description], _data_type_transform(row))) for row in results])  # noqa
                 df = pd.DataFrame.from_dict(items)
+                df = pandas_util.PandasUtil.fix_dataframe(
+                    df, drop_timezones=True)
                 parquetUtil.append_df_to_parquet(df)
                 results = proxy.fetchmany(fetch_size)
             else:
@@ -54,3 +56,19 @@ def export_to_parquet(worker_id, sql_bind, query, filter_field, start_pos,
     except Exception:
         logging.error(traceback.format_exc())
         raise
+
+
+def _data_type_transform(value, json_to_string=True):
+    value_transformed = None
+    if type(value) is datetime:
+        if(value.utcoffset()):  # if timestamp is given with timezone
+            value_transformed = value.replace(tzinfo=None) - value.utcoffset()
+        else:   # time is already in UTC
+            value_transformed = value.replace(tzinfo=None)
+    elif isinstance(value, (dict, list, tuple)):
+        value_transformed = json.dumps(value)
+        if not json_to_string:
+            value_transformed = json.loads(value_transformed)
+    else:
+        value_transformed = value
+    return value_transformed

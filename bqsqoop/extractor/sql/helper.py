@@ -67,17 +67,14 @@ def export_to_parquet(worker_id, sql_bind, query, filter_field, start_pos,
         raise
 
 
-def _data_type_transform(value, json_to_string=True):
-    value_transformed = None
+def _data_type_transform(value, compound_types_to_json_string=True):
+    value_transformed = value
     if type(value) is datetime:
         if(value.utcoffset()):  # if timestamp is given with timezone
             value_transformed = value.replace(tzinfo=None) - value.utcoffset()
         else:   # time is already in UTC
             value_transformed = value.replace(tzinfo=None)
-    elif isinstance(value, (dict, list, tuple)):
+    elif compound_types_to_json_string and \
+            isinstance(value, (dict, list, tuple)):
         value_transformed = json.dumps(value)
-        if not json_to_string:
-            value_transformed = json.loads(value_transformed)
-    else:
-        value_transformed = value
     return value_transformed

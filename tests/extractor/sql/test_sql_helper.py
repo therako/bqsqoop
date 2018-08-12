@@ -1,7 +1,10 @@
+import pytz
 import pytest
 import unittest
+import pandas as pd
 
 from unittest.mock import patch, MagicMock, call
+from datetime import datetime, timedelta
 from bqsqoop.extractor.sql.helper import (
     get_results_cursor, export_to_parquet
 )
@@ -142,3 +145,60 @@ class TestSQLHelper(unittest.TestCase):
                 end_pos=None, output_folder="output_folder/",
                 progress_bar=False
             )
+
+    @patch('uuid.uuid4', return_value="F43C2651-18C8-4EB0-82D2-10E3C7226015")
+    @patch('bqsqoop.utils.parquet_util.ParquetUtil')
+    @patch('sqlalchemy.create_engine')
+    def test_data_type_transform(self, create_engine, parquet_util, uuid):
+        mock_engine = MagicMock()
+        mock_connection = MagicMock()
+        create_engine.return_value = mock_engine
+        mock_engine.connect.return_value = mock_connection
+        mock_connection.execution_options.return_value = mock_connection
+        mock_proxy = MagicMock()
+        mock_connection.execute.return_value = mock_proxy
+        utc_dt = pytz.utc.localize(datetime(2018, 1, 1, 1, 0, 0))
+        pst_dt = utc_dt.astimezone(pytz.timezone("America/Los_Angeles"))
+        dict_type = {"a": 2}
+        list_type = [2, 3]
+        tuple_type = ("sfe", 7)
+        mock_proxy.fetchmany.side_effect = [
+            [[pst_dt, utc_dt, dict_type, list_type, tuple_type], [
+                pst_dt + timedelta(days=1), utc_dt + timedelta(days=1),
+                dict_type, list_type, tuple_type]],
+            None
+        ]
+        mock_proxy.cursor.description = [
+            ('pst_dt', "info"),
+            ('utc_dt', "info"),
+            ('dict_type', "info"),
+            ('list_type', "info"),
+            ('tuple_type', "info")
+        ]
+        mock_parquet_util = MagicMock()
+        parquet_util.return_value = mock_parquet_util
+
+        export_to_parquet(
+            worker_id=1, sql_bind="sql_bind", query="query",
+            filter_field=None, start_pos=None,
+            end_pos=None, output_folder="output_folder/",
+            progress_bar=False
+        )
+        call_list = mock_parquet_util.append_df_to_parquet.call_args_list
+        args, _ = call_list[0]
+        df = args[0]
+        # Both datetime fields should be in UTC
+        self.assertEqual(
+            df["pst_dt"].tolist(), [
+                pd.Timestamp('2018-01-01 01:00:00'),
+                pd.Timestamp('2018-01-02 01:00:00')])
+        self.assertEqual(
+            df["utc_dt"].tolist(), [
+                pd.Timestamp('2018-01-01 01:00:00'),
+                pd.Timestamp('2018-01-02 01:00:00')])
+        self.assertEqual(
+            df["dict_type"].tolist(), ['{"a": 2}', '{"a": 2}'])
+        self.assertEqual(
+            df["list_type"].tolist(), ['[2, 3]', '[2, 3]'])
+        self.assertEqual(
+            df["tuple_type"].tolist(), ['["sfe", 7]', '["sfe", 7]'])

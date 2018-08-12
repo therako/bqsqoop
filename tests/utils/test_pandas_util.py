@@ -1,6 +1,9 @@
+import pytz
 import pytest
 import unittest
 import pandas as pd
+
+from datetime import datetime
 from bqsqoop.utils.pandas_util import PandasUtil
 
 
@@ -79,3 +82,27 @@ class TestPandasUtil(unittest.TestCase):
         self.assertEqual(df[col_name].dtype.name, col_type)
         self.assertTrue(pd.isnull(df[col_name][0]))
         self.assertTrue(pd.isnull(df[col_name][1]))
+
+    def test_drop_timezones(self):
+        utc_dt = pytz.utc.localize(datetime(2018, 1, 1, 1, 0, 0))
+        pst_dt = utc_dt.astimezone(pytz.timezone("America/Los_Angeles"))
+        data = [
+            dict(
+                colA=pst_dt,
+                colB=datetime(2018, 1, 1, tzinfo=None),
+                colC=3),
+            dict(
+                colA=pst_dt,
+                colB=datetime(2018, 3, 1, tzinfo=None),
+                colC=6),
+        ]
+        df = pd.DataFrame.from_dict(data)
+        df_after_fix = PandasUtil.fix_dataframe(df, drop_timezones=True)
+        self.assertEqual(df_after_fix.columns.tolist(),
+                         ['colA', 'colB', 'colC'])
+        self.assertEqual(str(df_after_fix["colA"][0]), "2017-12-31 17:00:00")
+        self.assertEqual(str(df_after_fix["colB"][0]), "2018-01-01 00:00:00")
+        self.assertEqual(df_after_fix["colC"][0], 3)
+        self.assertEqual(str(df_after_fix["colA"][1]), "2017-12-31 17:00:00")
+        self.assertEqual(str(df_after_fix["colB"][1]), "2018-03-01 00:00:00")
+        self.assertEqual(df_after_fix["colC"][1], 6)

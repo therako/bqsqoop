@@ -6,7 +6,8 @@ class PandasUtil():
     @classmethod
     def fix_dataframe(self, df, type_castings={},
                       datetime_fields=[], datetime_format=None,
-                      column_schema={}):
+                      column_schema={},
+                      drop_timezones=False):
         """To do fixes like date formats, type_castings and empty columns
 
         Args:
@@ -33,6 +34,8 @@ class PandasUtil():
                         "column_name_3": "int",
                         ..etc
                     }
+            drop_timezones (bool): If True, will all reference to timezones
+                in datetime columne with timezones. Default is False.
 
         Returns: (pandas.Dataframe)
             returns pandas dataframe with all fixes
@@ -44,6 +47,8 @@ class PandasUtil():
         if datetime_format:
             self._fix_datetime(
                 _df, datetime_fields, datetime_format)
+        if drop_timezones:
+            self._drop_timezones(_df)
         return _df
 
     @classmethod
@@ -68,3 +73,10 @@ class PandasUtil():
             if col_name not in found_cols:
                 # Empty feilds can be string since pyarrow would fix it
                 df[col_name] = pd.Series(dtype=str)
+
+    @classmethod
+    def _drop_timezones(self, df):
+        datetime_fields_with_tz = [
+            k for k, v in df.dtypes.iteritems() if "M8[ns]" in v.str]
+        for dt_field in datetime_fields_with_tz:
+            df[dt_field] = df[dt_field].dt.tz_localize(None)

@@ -19,6 +19,7 @@ class SQLExtractor(Extractor):
         self._no_of_workers = self._config.get('no_of_workers', 1)
         self._output_folder = self._config.get(
             'output_folder', "./" + str(uuid.uuid4())[:8])
+        self._source_table_name = self._config.get('source_table_name')
 
     def validate_config(self):
         """Validates required configs for SQL extraction
@@ -33,6 +34,12 @@ class SQLExtractor(Extractor):
         return None
 
     def extract_to_parquet(self):
+        table_schema = None
+        if self._source_table_name:
+            table_schema = helper.get_table_schema(
+                self._config['sql_bind'],
+                self._source_table_name
+            )
         if self._no_of_workers > 1:
             _async_worker = async_worker.AsyncWorker(
                 self._no_of_workers)
@@ -40,12 +47,13 @@ class SQLExtractor(Extractor):
             for i in range(self._no_of_workers):
                 _async_worker.send_data_to_worker(
                     worker_id=i,
-                    **self._get_extract_job_fn_and_params(splits[i])
+                    **self._get_extract_job_fn_and_params(
+                        splits[i], table_schema)
                 )
             logging.debug('Waiting for Extractor job results...')
             return _async_worker.get_job_results()
         else:
-            args = self._get_extract_job_fn_and_params(None)
+            args = self._get_extract_job_fn_and_params(None, table_schema)
             del args['worker_callback']
             res = helper.export_to_parquet(
                 worker_id=0,
@@ -72,7 +80,7 @@ class SQLExtractor(Extractor):
             sql_bind, sql_min_max_query).fetchone()
         return min_id, max_id
 
-    def _get_extract_job_fn_and_params(self, split_range):
+    def _get_extract_job_fn_and_params(self, split_range, table_schema):
         start_pos = end_pos = None
         if split_range:
             start_pos = split_range['start']
@@ -83,4 +91,5 @@ class SQLExtractor(Extractor):
                     filter_field=self._config.get('filter_field'),
                     output_folder=self._output_folder,
                     start_pos=start_pos,
-                    end_pos=end_pos)
+                    end_pos=end_pos,
+                    table_schema=table_schema)

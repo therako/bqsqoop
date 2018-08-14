@@ -25,9 +25,19 @@ def get_streaming_result_proxy(sql_bind, query, pool_timeout=300):
     return proxy
 
 
+def get_table_schema(sql_bind, table_name, pool_timeout=300):
+    engine = sqlalchemy.create_engine(sql_bind, pool_timeout=pool_timeout)
+    insp = sqlalchemy.inspect(engine)
+    columns = insp.get_columns(table_name)
+    table_schema = {}
+    for column in columns:
+        table_schema[column["name"]] = column["type"].python_type
+    return table_schema
+
+
 def export_to_parquet(worker_id, sql_bind, query, filter_field, start_pos,
                       end_pos, output_folder, progress_bar=True,
-                      fetch_size=100):
+                      fetch_size=100, table_schema=None):
     try:
         start_time = int(time.time())
         output_file = os.path.join(output_folder, "{}.parq".format(
@@ -37,6 +47,9 @@ def export_to_parquet(worker_id, sql_bind, query, filter_field, start_pos,
                 filter_field, start_pos, end_pos)
             query = query % filter_query
         parquetUtil = parquet_util.ParquetUtil(output_file)
+        parquet_schema = None
+        if table_schema:
+            parquet_schema = parquet_util.build_pyarrow_schema(table_schema)
         logging.debug(output_file)
         logging.debug(query)
         proxy = get_streaming_result_proxy(sql_bind, query)
@@ -53,7 +66,7 @@ def export_to_parquet(worker_id, sql_bind, query, filter_field, start_pos,
                 df = pd.DataFrame.from_dict(items)
                 df = pandas_util.PandasUtil.fix_dataframe(
                     df, drop_timezones=True)
-                parquetUtil.append_df_to_parquet(df)
+                parquetUtil.append_df_to_parquet(df, schema=parquet_schema)
                 results = proxy.fetchmany(fetch_size)
             else:
                 break

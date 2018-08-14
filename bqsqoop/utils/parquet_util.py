@@ -1,5 +1,7 @@
 import pyarrow as pa
 import pyarrow.parquet as pq
+from decimal import Decimal
+from datetime import datetime
 
 
 class ParquetUtil():
@@ -40,13 +42,19 @@ class ParquetUtil():
             "bool": pa.binary(),
             "boolean": pa.binary(),
             "date": pa.timestamp('ns'),
-            "datetime": pa.timestamp('ns')
+            "datetime": pa.timestamp('ns'),
+            # For python types
+            int: pa.int64(),
+            Decimal: pa.float64(),
+            str: pa.string(),
+            datetime: pa.timestamp('ns'),
+            bool: pa.binary(),
         }
         for col_name, col_type in column_schema.items():
             fields.append(
                 pa.field(
                     name=col_name,
-                    type=column_types_map[col_type],
+                    type=column_types_map.get(col_type, pa.string()),
                     nullable=True))
         return pa.schema(fields=fields)
 

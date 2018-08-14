@@ -106,5 +106,5 @@ class TestExtractToParquet(unittest.TestCase):
         export_to_parquet.assert_called_with(
             worker_id=0, filter_field='filter_field',
             output_folder='./F43C2651', query='query %s', sql_bind='sql_bind',
-            start_pos=None, end_pos=None,
+            start_pos=None, end_pos=None, table_schema=None
         )

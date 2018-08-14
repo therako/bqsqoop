@@ -49,7 +49,7 @@ def export_to_parquet(worker_id, sql_bind, query, filter_field, start_pos,
         parquetUtil = parquet_util.ParquetUtil(output_file)
         parquet_schema = None
         if table_schema:
-            parquet_schema = parquet_util.build_pyarrow_schema(table_schema)
+            parquet_schema = parquetUtil.build_pyarrow_schema(table_schema)
         logging.debug(output_file)
         logging.debug(query)
         proxy = get_streaming_result_proxy(sql_bind, query)

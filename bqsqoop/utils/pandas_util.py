@@ -7,7 +7,8 @@ class PandasUtil():
     def fix_dataframe(self, df, type_castings={},
                       datetime_fields=[], datetime_format=None,
                       column_schema={},
-                      drop_timezones=False):
+                      drop_timezones=False,
+                      decimal_fields=[], decimal_precision=None):
         """To do fixes like date formats, type_castings and empty columns
 
         Args:
@@ -49,6 +50,8 @@ class PandasUtil():
                 _df, datetime_fields, datetime_format)
         if drop_timezones:
             self._drop_timezones(_df)
+        if decimal_fields and decimal_precision:
+            self._set_decimal_precision(_df, decimal_fields, decimal_precision)
         return _df
 
     @classmethod
@@ -76,6 +79,13 @@ class PandasUtil():
 
     @classmethod
     def _drop_timezones(self, df):
+        datetime_fields_with_tz = [
+            k for k, v in df.dtypes.iteritems() if "M8[ns]" in v.str]
+        for dt_field in datetime_fields_with_tz:
+            df[dt_field] = df[dt_field].dt.tz_localize(None)
+
+    @classmethod
+    def _set_decimal_precision(self, df, decimal_fields, decimal_precision):
         datetime_fields_with_tz = [
             k for k, v in df.dtypes.iteritems() if "M8[ns]" in v.str]
         for dt_field in datetime_fields_with_tz:

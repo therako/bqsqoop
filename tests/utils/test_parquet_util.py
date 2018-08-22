@@ -4,6 +4,7 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 
+from datetime import datetime
 from bqsqoop.utils.parquet_util import ParquetUtil
 
 
@@ -79,3 +80,39 @@ class TestParquetUtil(unittest.TestCase):
             "date_field").type, pa.timestamp('ns'))
         self.assertEqual(pa_schema.field_by_name(
             "datetime_field").type, pa.timestamp('ns'))
+
+    def test_fix_dataframe_for_schema(self):
+        data = [
+            dict(colA=None, colB=None, colD=1,
+                 colE=datetime(2018, 9, 10, 0, 0, 0, 100)),
+            dict(colA=None, colB=None, colD=3)
+        ]
+        df = pd.DataFrame.from_dict(data)
+        arrow_schema = [
+            pa.field(
+                name="colA",
+                type=pa.string(),
+                nullable=True),
+            pa.field(
+                name="colB",
+                type=pa.float64(),
+                nullable=True),
+            pa.field(
+                name="colC",
+                type=pa.binary(),
+                nullable=True),
+            pa.field(
+                name="colD",
+                type=pa.int64(),
+                nullable=True),
+            pa.field(
+                name="colE",
+                type=pa.timestamp('ns'),
+                nullable=True)
+        ]
+        result_df = ParquetUtil.fix_dataframe_for_schema(df, arrow_schema)
+        self.assertEqual(result_df["colA"].dtypes, object)
+        self.assertEqual(result_df["colB"].dtypes, float)
+        self.assertEqual(result_df["colC"].dtypes, bool)
+        self.assertEqual(result_df["colD"].dtypes, int)
+        self.assertEqual(result_df["colE"].dtypes, "<M8[ns]")

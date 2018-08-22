@@ -74,7 +74,9 @@ class TestESHelper(unittest.TestCase):
 
         _mock_parquet_util = MagicMock()
         parquet_util.return_value = _mock_parquet_util
-        pandas_util.fix_dataframe.return_value = "df_after_corrections"
+        parquet_util.fix_dataframe_for_schema.side_effect = [
+            "df_after_corrections"
+        ]
         _mock_parquet_util.build_pyarrow_schema.return_value = "pyarrow_schema"
 
         _output_file = ESHelper.scroll_and_extract_data(
@@ -97,18 +99,6 @@ class TestESHelper(unittest.TestCase):
         _mock_parquet_util.build_pyarrow_schema.assert_called_with(
             {'field1': 'text', 'field2': 'long', 'field3': 'date'}
         )
-        _call_list = pandas_util.fix_dataframe.call_args_list
-        _args, _kwargs = _call_list[0]
-        self.assertEqual(
-            _args[0].to_json(),
-            '{"field1":{"0":"value1"},"field2":{"0":2},"field3":{"0":"some_date"}}')    # noqa
-        self.assertEquals(_kwargs, {
-            "type_castings": {'field2': "string"},
-            "datetime_format": '%Y-%m-%dT%H:%M:%S',
-            "datetime_fields": ["field3"],
-            "column_schema": {
-                'field1': 'text', 'field2': 'long', 'field3': 'date'}
-        })
         _mock_parquet_util.append_df_to_parquet.assert_called_once_with(
             "df_after_corrections", schema='pyarrow_schema')
 
@@ -167,12 +157,11 @@ class TestESHelper(unittest.TestCase):
 
         _mock_parquet_util = MagicMock()
         parquet_util.return_value = _mock_parquet_util
-        pandas_util.fix_dataframe.side_effect = [
-            "df_after_corrections1",
-            "df_after_corrections2",
+        _mock_parquet_util.build_pyarrow_schema.return_value = "pyarrow_schema"
+        parquet_util.fix_dataframe_for_schema.side_effect = [
+            "df_after_corrections1", "df_after_corrections2",
             "df_after_corrections3"
         ]
-        _mock_parquet_util.build_pyarrow_schema.return_value = "pyarrow_schema"
 
         ESHelper.scroll_and_extract_data(
             worker_id=0, total_worker_count=1, es_hosts=['url'],
@@ -188,37 +177,6 @@ class TestESHelper(unittest.TestCase):
         )
         _mock_es.scroll.assert_called_with(
             scroll='60s', scroll_id='_scroll_id1')
-        _call_list = pandas_util.fix_dataframe.call_args_list
-        _args, _kwargs = _call_list[0]
-        self.assertEqual(
-            _args[0].to_json(),
-            '{"field1":{"0":"value1"},"field2":{"0":2}}')
-        self.assertEquals(_kwargs, {
-            "type_castings": {},
-            "datetime_format": '%Y-%m-%dT%H:%M:%S',
-            "datetime_fields": [],
-            "column_schema": {'field1': 'text'}
-        })
-        _args, _kwargs = _call_list[1]
-        self.assertEqual(
-            _args[0].to_json(),
-            '{"field1":{"0":"value2"},"field2":{"0":3}}')
-        self.assertEquals(_kwargs, {
-            "type_castings": {},
-            "datetime_format": '%Y-%m-%dT%H:%M:%S',
-            "datetime_fields": [],
-            "column_schema": {'field1': 'text'}
-        })
-        _args, _kwargs = _call_list[2]
-        self.assertEqual(
-            _args[0].to_json(),
-            '{"field1":{"0":"value3"},"field2":{"0":4}}')
-        self.assertEquals(_kwargs, {
-            "type_castings": {},
-            "datetime_format": '%Y-%m-%dT%H:%M:%S',
-            "datetime_fields": [],
-            "column_schema": {'field1': 'text'}
-        })
         _mock_parquet_util.append_df_to_parquet.assert_has_calls([
             call("df_after_corrections1", schema='pyarrow_schema'),
             call("df_after_corrections2", schema='pyarrow_schema'),
@@ -243,7 +201,7 @@ class TestESHelper(unittest.TestCase):
 
         _mock_parquet_util = MagicMock()
         parquet_util.return_value = _mock_parquet_util
-        pandas_util.fix_dataframe.return_value = "df_after_corrections"
+        parquet_util.fix_dataframe_for_schema = self.mock_fix_dataframe_for_schema  # noqa
         _mock_parquet_util.build_pyarrow_schema.return_value = "pyarrow_schema"
         ESHelper.scroll_and_extract_data(
             worker_id=1, total_worker_count=2, es_hosts=['url'],
@@ -255,3 +213,7 @@ class TestESHelper(unittest.TestCase):
         self.assertEquals(
             _kwargs,
             {'body': {'slice': {'id': 1, 'max': 2}}, 'index': 'some_es_index'})
+
+    def mock_fix_dataframe_for_schema(self, df, arrow_schema,
+                                      datetime_format=None):
+        return df

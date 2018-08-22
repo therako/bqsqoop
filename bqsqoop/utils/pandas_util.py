@@ -16,8 +16,7 @@ class PandasUtil():
         return pd.to_numeric(series)
 
     def fix_int(self, series):
-        # Cause int's can't have null values
-        return series.astype(str)
+        return series.astype(int)
 
     def fix_timestamp(self, series):
         if self.datetime_format:

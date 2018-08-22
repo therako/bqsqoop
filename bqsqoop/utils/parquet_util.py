@@ -35,17 +35,18 @@ class ParquetUtil():
         df_fix_fns = {
             pa.string(): pandasUtil.fix_string,
             pa.binary(): pandasUtil.fix_bool,
+            pa.bool_(): pandasUtil.fix_bool,
             pa.float64(): pandasUtil.fix_float,
             pa.int64(): pandasUtil.fix_int,
             pa.timestamp('ns'): pandasUtil.fix_timestamp,
         }
         _df = df.copy()
-        for k, v in arrow_schema.items():
-            if v in df_fix_fns:
-                fn = df_fix_fns[v]
-                if k not in _df.columns:
-                    _df[k] = pd.Series()
-                _df[k] = fn(_df[k])
+        for field in arrow_schema:
+            if field.type in df_fix_fns:
+                fn = df_fix_fns[field.type]
+                if field.name not in _df.columns:
+                    _df[field.name] = pd.Series()
+                _df[field.name] = fn(_df[field.name])
         return _df
 
     def build_pyarrow_schema(self, column_schema):
@@ -79,7 +80,7 @@ class ParquetUtil():
             "datetime": pa.timestamp('ns'),
             # For python types
             int: pa.int64(),
-            Decimal: pa.decimal128(7),
+            Decimal: pa.float64(),
             float: pa.float64(),
             str: pa.string(),
             datetime: pa.timestamp('ns'),

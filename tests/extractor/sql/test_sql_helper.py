@@ -47,6 +47,7 @@ class TestSQLHelper(unittest.TestCase):
         ]
         mock_parquet_util = MagicMock()
         parquet_util.return_value = mock_parquet_util
+        parquet_util.fix_dataframe_for_schema = self.mock_fix_dataframe_for_schema  # noqa
 
         output_file = export_to_parquet(
             worker_id=1, sql_bind="sql_bind", query="query %s",
@@ -97,6 +98,7 @@ class TestSQLHelper(unittest.TestCase):
         ]
         mock_parquet_util = MagicMock()
         parquet_util.return_value = mock_parquet_util
+        parquet_util.fix_dataframe_for_schema = self.mock_fix_dataframe_for_schema  # noqa
 
         output_file = export_to_parquet(
             worker_id=1, sql_bind="sql_bind", query="query",
@@ -137,6 +139,7 @@ class TestSQLHelper(unittest.TestCase):
 
         mock_parquet_util = MagicMock()
         parquet_util.return_value = mock_parquet_util
+        parquet_util.fix_dataframe_for_schema = self.mock_fix_dataframe_for_schema  # noqa
 
         with pytest.raises(Exception, match=r"Test error"):
             export_to_parquet(
@@ -177,6 +180,7 @@ class TestSQLHelper(unittest.TestCase):
         ]
         mock_parquet_util = MagicMock()
         parquet_util.return_value = mock_parquet_util
+        parquet_util.fix_dataframe_for_schema = self.mock_fix_dataframe_for_schema  # noqa
 
         export_to_parquet(
             worker_id=1, sql_bind="sql_bind", query="query",
@@ -202,3 +206,7 @@ class TestSQLHelper(unittest.TestCase):
             df["list_type"].tolist(), ['[2, 3]', '[2, 3]'])
         self.assertEqual(
             df["tuple_type"].tolist(), ['["sfe", 7]', '["sfe", 7]'])
+
+    def mock_fix_dataframe_for_schema(self, df, arrow_schema,
+                                      datetime_format=None):
+        return df

@@ -4,6 +4,7 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 
+from datetime import datetime
 from bqsqoop.utils.parquet_util import ParquetUtil
 
 
@@ -79,3 +80,24 @@ class TestParquetUtil(unittest.TestCase):
             "date_field").type, pa.timestamp('ns'))
         self.assertEqual(pa_schema.field_by_name(
             "datetime_field").type, pa.timestamp('ns'))
+
+    def test_fix_dataframe_for_schema(self):
+        data = [
+            dict(colA=None, colB=None,
+                 colE=datetime(2018, 9, 10, 0, 0, 0, 100)),
+            dict(colA=None, colB=None)
+        ]
+        df = pd.DataFrame.from_dict(data)
+        arrow_schema = {
+            "colA": pa.string(),
+            "colB": pa.float64(),
+            "colC": pa.binary(),
+            "colD": pa.int64(),
+            "colE": pa.timestamp('ns')
+        }
+        result_df = ParquetUtil.fix_dataframe_for_schema(df, arrow_schema)
+        self.assertEqual(result_df["colA"].dtypes, object)
+        self.assertEqual(result_df["colB"].dtypes, float)
+        self.assertEqual(result_df["colC"].dtypes, bool)
+        self.assertEqual(result_df["colD"].dtypes, object)
+        self.assertEqual(result_df["colE"].dtypes, "<M8[ns]")

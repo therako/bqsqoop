@@ -4,11 +4,11 @@ import time
 import json
 import logging
 import traceback
+import sqlalchemy
 import pandas as pd
 
-import sqlalchemy
 from datetime import datetime
-from bqsqoop.utils import parquet_util, pandas_util
+from bqsqoop.utils import parquet_util
 
 
 def get_results_cursor(sql_bind, query, pool_timeout=300):
@@ -64,8 +64,8 @@ def export_to_parquet(worker_id, sql_bind, query, filter_field, start_pos,
                         row_dict[x] = _data_type_transform(y)
                     items.append(row_dict)
                 df = pd.DataFrame.from_dict(items)
-                df = pandas_util.PandasUtil.fix_dataframe(
-                    df, drop_timezones=True)
+                df = parquet_util.ParquetUtil.fix_dataframe_for_schema(
+                    df, parquet_schema)
                 parquetUtil.append_df_to_parquet(df, schema=parquet_schema)
                 results = proxy.fetchmany(fetch_size)
             else:

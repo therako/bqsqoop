@@ -1,7 +1,9 @@
+import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 from decimal import Decimal
 from datetime import datetime
+from bqsqoop.utils.pandas_util import PandasUtil
 
 
 class ParquetUtil():
@@ -13,6 +15,38 @@ class ParquetUtil():
         """
         self._output_file = output_file
         self._pqwriter = None
+
+    @classmethod
+    def fix_dataframe_for_schema(self, df, arrow_schema, datetime_format=None):
+        """Fixes pandas DF for arrow format
+
+        Since arrow has strict types and pandas is not so,
+        this function can help fix some of those issues.
+
+        Args:
+            df (obj): A pandas dataframe
+            arrow_schema (dict): A pyarrow_schema for the dataframe,
+                `build_pyarrow_schema` method returns the right format
+
+        Returns (obj):
+            Fixed pandas dataframe
+        """
+        pandasUtil = PandasUtil(datetime_format=datetime_format)
+        df_fix_fns = {
+            pa.string(): pandasUtil.fix_string,
+            pa.binary(): pandasUtil.fix_bool,
+            pa.float64(): pandasUtil.fix_float,
+            pa.int64(): pandasUtil.fix_int,
+            pa.timestamp('ns'): pandasUtil.fix_timestamp,
+        }
+        _df = df.copy()
+        for k, v in arrow_schema.items():
+            if v in df_fix_fns:
+                fn = df_fix_fns[v]
+                if k not in _df.columns:
+                    _df[k] = pd.Series()
+                _df[k] = fn(_df[k])
+        return _df
 
     def build_pyarrow_schema(self, column_schema):
         """Convert columnname-type KV pairs to pyarrow.schema
@@ -45,10 +79,11 @@ class ParquetUtil():
             "datetime": pa.timestamp('ns'),
             # For python types
             int: pa.int64(),
-            Decimal: pa.float64(),
+            Decimal: pa.decimal128(7),
+            float: pa.float64(),
             str: pa.string(),
             datetime: pa.timestamp('ns'),
-            bool: pa.binary(),
+            bool: pa.bool_(),
         }
         for col_name, col_type in column_schema.items():
             fields.append(

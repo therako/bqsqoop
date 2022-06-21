@@ -3,7 +3,7 @@ toml
 
 # Process libs
 tqdm==4.19.8
-numpy==1.14.5
+numpy==1.22.0
 pandas==0.23.1
 pytz==2018.4
 
